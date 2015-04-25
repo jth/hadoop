@@ -100,6 +100,9 @@ public class SimulatedFSDataset implements FsDatasetSpi<FsVolumeSpi> {
 
   public static byte simulatedByte(Block b, long offsetInBlk) {
     byte firstByte = (byte) (b.getBlockId() % Byte.MAX_VALUE);
+    if (firstByte < 0) {
+      firstByte *= -1;
+    }
     return (byte) ((firstByte + offsetInBlk) % Byte.MAX_VALUE);
   }
   
