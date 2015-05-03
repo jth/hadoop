@@ -533,8 +533,8 @@ public class ContainerManagerImpl extends CompositeService implements
     List<ApplicationId> appIds =
         new ArrayList<ApplicationId>(applications.keySet());
     this.handle(
-        new CMgrCompletedAppsEvent(appIds,
-            CMgrCompletedAppsEvent.Reason.ON_SHUTDOWN));
+            new CMgrCompletedAppsEvent(appIds,
+                    CMgrCompletedAppsEvent.Reason.ON_SHUTDOWN));
 
     LOG.info("Waiting for Applications to be Finished");
 
@@ -704,10 +704,11 @@ public class ContainerManagerImpl extends CompositeService implements
       startContainers(StartContainersRequest requests) throws YarnException,
           IOException {
     if (blockNewContainerRequests.get()) {
-      throw new NMNotYetReadyException(
-        "Rejecting new containers as NodeManager has not"
-            + " yet connected with ResourceManager");
+        throw new NMNotYetReadyException(
+                "Rejecting new containers as NodeManager has not"
+                        + " yet connected with ResourceManager");
     }
+      System.out.println("JTH: Starting containers.");
     UserGroupInformation remoteUgi = getRemoteUgi();
     NMTokenIdentifier nmTokenIdentifier = selectNMTokenIdentifier(remoteUgi);
     authorizeUser(remoteUgi,nmTokenIdentifier);

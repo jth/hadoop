@@ -1087,6 +1087,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
     SecurityUtil.login(this.conf, YarnConfiguration.RM_KEYTAB,
         YarnConfiguration.RM_PRINCIPAL, socAddr.getHostName());
 
+    System.out.println("JTH: Doing secure login on ResourceManager");
     // if security is enable, set rmLoginUGI as UGI of loginUser
     if (UserGroupInformation.isSecurityEnabled()) {
       this.rmLoginUGI = UserGroupInformation.getLoginUser();
@@ -1194,6 +1195,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
   public static void main(String argv[]) {
     Thread.setDefaultUncaughtExceptionHandler(new YarnUncaughtExceptionHandler());
     StringUtils.startupShutdownMessage(ResourceManager.class, argv, LOG);
+    System.out.println("Starting Resource Manager");
     try {
       Configuration conf = new YarnConfiguration();
       GenericOptionsParser hParser = new GenericOptionsParser(conf, argv);

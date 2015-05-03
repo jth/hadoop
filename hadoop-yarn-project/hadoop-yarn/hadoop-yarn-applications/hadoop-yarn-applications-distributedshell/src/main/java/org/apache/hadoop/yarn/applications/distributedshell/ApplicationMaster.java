@@ -1060,7 +1060,8 @@ public class ApplicationMaster {
 
     ContainerRequest request = new ContainerRequest(capability, null, null,
         pri);
-    LOG.info("Requested container ask: " + request.toString());
+    System.out.println("JTH: setupContainerAskForRM(). Request: " + request.toString());
+    //LOG.info("Requested container ask: " + request.toString());
     return request;
   }
 

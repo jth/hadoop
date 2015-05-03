@@ -94,6 +94,7 @@ public class ContainerLauncherImpl extends AbstractService implements
   
   private void removeContainerIfDone(ContainerId id) {
     Container c = containers.get(id);
+    System.out.println("JTH: removeContainerIfDone()");
     if(c != null && c.isCompletelyDone()) {
       containers.remove(id);
     }
@@ -112,6 +113,7 @@ public class ContainerLauncherImpl extends AbstractService implements
     
     public Container(TaskAttemptId taId, ContainerId containerID,
         String containerMgrAddress) {
+        System.out.println("JTH: instantiated container");
       this.state = ContainerState.PREP;
       this.taskAttemptID = taId;
       this.containerMgrAddress = containerMgrAddress;
