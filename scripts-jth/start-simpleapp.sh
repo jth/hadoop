@@ -5,7 +5,7 @@ HADOOP_HOME=$HOME/work/MA/build/hadoop-3.0.0-SNAPSHOT
 UM_LAUNCHER=share/hadoop/yarn/hadoop-yarn-applications-unmanaged-am-launcher-3.0.0-SNAPSHOT.jar
 SIMPLE_JAR=share/hadoop/yarn/simple-yarn-app-1.1.0.jar
 HADOOP_BIN=./bin/hadoop
-NUM_CONTAINERS=2
+NUM_CONTAINERS=4
 
 # Command line arguments
 cyan="\033[01;36m"
@@ -51,6 +51,20 @@ change_dir() {
     fi
 }
 
+start_yarn() {
+    if [ -e "/tmp/yarn-running" ]; then
+        log "Yarn already running"
+        return
+    fi
+    
+    if eval "$HADOOP_HOME/sbin/start-yarn.sh"; then
+        print_ok
+        touch /tmp/yarn-running
+    else
+        fail "Could not execute start-yarn.sh"
+    fi
+}
+
 start_simple_app() {
     change_dir $HADOOP_HOME    
 
@@ -71,5 +85,6 @@ start_simple_app() {
 if [ $# -ne 1 ]; then
     fail "Provide the argument to be executed"
 else
-    start_simple_app $0
+    start_yarn
+    start_simple_app $1
 fi
