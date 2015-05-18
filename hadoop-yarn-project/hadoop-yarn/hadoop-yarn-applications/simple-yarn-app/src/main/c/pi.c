@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
     }
 
 	printf("Starting Pi calculation YARN app using infinite series\n");
+    printf("Using %lu iterations\n", iterations);
 	
 	for (unsigned long i = 0; i < iterations; ++i) {
 		pi -= denom / divisor;

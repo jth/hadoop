@@ -5,7 +5,6 @@ HADOOP_HOME=$HOME/work/MA/build/hadoop-3.0.0-SNAPSHOT
 UM_LAUNCHER=share/hadoop/yarn/hadoop-yarn-applications-unmanaged-am-launcher-3.0.0-SNAPSHOT.jar
 SIMPLE_JAR=share/hadoop/yarn/simple-yarn-app-1.1.0.jar
 HADOOP_BIN=./bin/hadoop
-NUM_CONTAINERS=4
 
 # Command line arguments
 cyan="\033[01;36m"
@@ -65,11 +64,12 @@ start_yarn() {
     fi
 }
 
+# $1 = number of containers
 start_simple_app() {
     change_dir $HADOOP_HOME    
 
     cmd="$HADOOP_BIN jar $UM_LAUNCHER Client -classpath $SIMPLE_JAR \
-    -cmd \"java de.jth.simpleyarnapp.ApplicationMaster $1 $NUM_CONTAINERS\""
+    -cmd \"java de.jth.simpleyarnapp.ApplicationMaster $1\""
 
     if eval "$cmd"; then
         print_ok

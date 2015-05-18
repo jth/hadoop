@@ -152,6 +152,14 @@ esac
 shift
 done
 
+echo "Are you sure you want to rebuild YARN?"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes) info "Rebuilding Hadoop/Yarn";;
+        No) exit;;
+    esac
+done
+
 # Default is just building yarn.
 if [[ $REBUILD == true ]]; then
     warn "Doing complete rebuild of hadoop"

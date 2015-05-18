@@ -1,45 +1,115 @@
 package de.jth.simpleyarnapp;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
 import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
-import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.client.api.NMClient;
+import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.Records;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
-public class ApplicationMaster {
+public class ApplicationMaster implements AMRMClientAsync.CallbackHandler {
 
-    final static String command =
+    private final NMClient nmClient;
+    private int numberContainers;
+    private final YarnConfiguration configuration;
+    private final static int MIN_ITERATIONS = Short.MAX_VALUE;
+    private final static int MAX_ITERATIONS = Integer.MAX_VALUE;
+    private final static String command =
             "/home/jth/work/MA/repos/hadoop/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/simple-yarn-app/src/main/c/build/pi";
 
+    public ApplicationMaster(int numberContainers) {
+        configuration = new YarnConfiguration();
+        this.numberContainers = numberContainers;
+        nmClient = NMClient.createNMClient();
+        nmClient.init(configuration);
+        nmClient.start();
+    }
+
     public static void main(String[] args) throws Exception {
+        final int numberContainers = Integer.parseInt(args[0]);
+        System.out.println("JTH: Starting with " + numberContainers + " containers");
+        ApplicationMaster am = new ApplicationMaster(Integer.parseInt(args[0]));
+        am.runMainLoop();
+    }
 
-        final String iters = args[0];
-        final int numberContainers = Integer.valueOf(args[1]);
+    @Override
+    public void onContainersCompleted(List<ContainerStatus> statuses) {
+        for (ContainerStatus status : statuses) {
+            System.out.println("JTH: Completed container " + status.getContainerId());
+            synchronized (this) {
+                numberContainers--;
+            }
+        }
+    }
 
-        // Initialize clients to ResourceManager and NodeManagers
-        // There is no specific configuration here, but possible.
-        Configuration conf = new YarnConfiguration();
+    private long getRandomIterations() {
+        Random rand = new Random();
 
-        // ApplicationMaster <-> ResourceManager, this is the request for containers.
-        AMRMClient<ContainerRequest> rmClient = AMRMClient.createAMRMClient();
-        rmClient.init(conf);
+        int randomNum = rand.nextInt((MAX_ITERATIONS - MIN_ITERATIONS) + 1) + MIN_ITERATIONS;
+
+        return randomNum;
+    }
+
+    @Override
+    public void onContainersAllocated(List<Container> containers) {
+        for (Container container : containers) {
+            // Launch container by create ContainerLaunchContext
+            ContainerLaunchContext ctx =
+                    Records.newRecord(ContainerLaunchContext.class);
+            final String complete_cmd = command + " " + getRandomIterations() +
+                            " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" +
+                            " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
+            System.out.println("JTH: Executing cmd: " + complete_cmd);
+            ctx.setCommands(Collections.singletonList(complete_cmd));
+            System.out.println("JTH: Launching container " + container.getId());
+
+            // This actually starts the container with the given context
+            try {
+                nmClient.startContainer(container, ctx);
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void onShutdownRequest() {
+
+    }
+
+    @Override
+    public void onNodesUpdated(List<NodeReport> updatedNodes) {
+
+    }
+
+    @Override
+    public float getProgress() {
+        return 0;
+    }
+
+    @Override
+    public void onError(Throwable e) {
+
+    }
+
+    public boolean doneWithContainers() {
+        return numberContainers == 0;
+    }
+
+    public void runMainLoop() throws Exception {
+        AMRMClientAsync<AMRMClient.ContainerRequest> rmClient = AMRMClientAsync.createAMRMClientAsync(100, this);
+        rmClient.init(configuration);
         rmClient.start();
 
-        // ApplicationMaster <-> NodeManager, this launches containers (?)
-        NMClient nmClient = NMClient.createNMClient();
-        nmClient.init(conf);
-        nmClient.start();
-
         // Register with ResourceManager
-        System.out.println("registerApplicationMaster 0");
+        System.out.println("JTH: registerApplicationMaster 0");
         rmClient.registerApplicationMaster("", 0, "");
-        System.out.println("registerApplicationMaster 1");
+        System.out.println("JTH: registerApplicationMaster 1");
 
         // Priority for worker containers - priorities are intra-application
         Priority priority = Records.newRecord(Priority.class);
@@ -51,43 +121,21 @@ public class ApplicationMaster {
         capability.setVirtualCores(1);
 
         // Make container requests to ResourceManager
-        // Use the previously created rmClient for this.
         for (int i = 0; i < numberContainers; ++i) {
-            ContainerRequest containerAsk = new ContainerRequest(capability, null, null, priority);
-            System.out.println("Making res-req " + i);
+            AMRMClient.ContainerRequest containerAsk = new AMRMClient.ContainerRequest(capability, null, null, priority);
+            System.out.println("[AM] Making res-req " + i);
             rmClient.addContainerRequest(containerAsk);
         }
 
-
-        // Obtain allocated containers, launch and check for responses
-        // This is basically busy-waiting
-        int responseId = 0;
-
-        // Is it possible to get more than one allocated container per request?
-        AllocateResponse response = rmClient.allocate(responseId++);
-        for (Container container : response.getAllocatedContainers()) {
-            // Launch container by create ContainerLaunchContext
-            ContainerLaunchContext ctx =
-                    Records.newRecord(ContainerLaunchContext.class);
-            System.out.println("JTH: Executing cmd: " + command);
-            ctx.setCommands(
-                    // Redirects the output of the command to stdout or stderr, depending on the output
-                    Collections.singletonList(
-                            command + " " + iters +
-                                    " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" +
-                                    " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr"
-                    ));
-            System.out.println("Launching container " + container.getId());
-            // This actually starts the container with the given context
-            nmClient.startContainer(container, ctx);
-        }
-        // Container has been "completed", increment the counter to exit while-loop eventually
-        for (ContainerStatus status : response.getCompletedContainersStatuses()) {
-            System.out.println("Completed container " + status.getContainerId());
+        System.out.println("[AM] waiting for containers to finish");
+        while (!doneWithContainers()) {
+            Thread.sleep(100);
         }
 
-        // Un-register with ResourceManager, this is basically cleanup.
+        System.out.println("[AM] unregisterApplicationMaster 0");
+        // Un-register with ResourceManager
         rmClient.unregisterApplicationMaster(
                 FinalApplicationStatus.SUCCEEDED, "", "");
+        System.out.println("[AM] unregisterApplicationMaster 1");
     }
 }
