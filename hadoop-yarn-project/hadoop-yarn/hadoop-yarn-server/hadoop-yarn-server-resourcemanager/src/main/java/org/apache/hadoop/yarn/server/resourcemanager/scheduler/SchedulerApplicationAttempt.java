@@ -93,7 +93,7 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
 
   private final Multiset<Priority> reReservations = HashMultiset.create();
   
-  private Resource resourceLimit = Resource.newInstance(0, 0);
+  private Resource resourceLimit = Resource.newInstance(0, 0, 0);
   private boolean unmanagedAM = true;
   private boolean amRunning = false;
   private LogAggregationContext logAggregationContext;

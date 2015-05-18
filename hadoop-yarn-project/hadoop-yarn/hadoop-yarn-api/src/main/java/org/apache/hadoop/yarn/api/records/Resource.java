@@ -53,12 +53,17 @@ public abstract class Resource implements Comparable<Resource> {
 
   @Public
   @Stable
-  public static Resource newInstance(int memory, int vCores) {
+  public static Resource newInstance(int memory, int vCores, int bandwidth) {
     Resource resource = Records.newRecord(Resource.class);
     resource.setMemory(memory);
     resource.setVirtualCores(vCores);
+    resource.setBandwidth(bandwidth);
     return resource;
   }
+
+  public abstract void setBandwidth(int bandwidth);
+
+  public abstract int getBandwidth();
 
   /**
    * Get <em>memory</em> of the resource.

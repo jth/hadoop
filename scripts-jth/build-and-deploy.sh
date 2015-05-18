@@ -134,6 +134,27 @@ usage() {
 
 ## main ##
 
+main() {
+# Default is just building yarn.
+    if [[ $REBUILD == true ]]; then
+        warn "Doing complete rebuild of hadoop"
+
+        if [[ -e $TARGET/hadoop-3.0.0-SNAPSHOT ]]; then
+            warn "Deleting $TARGET/hadoop-3.0.0-SNAPSHOT"
+            rm -rf $TARGET/hadoop-3.0.0-SNAPSHOT
+        fi
+
+        build_hadoop
+        deploy_hadoop
+    else
+        info "Just rebuilding YARN"
+
+        build_yarn
+        deploy_yarn
+    fi
+    exit
+}
+
 while [[ $# -ge 1 ]]
 do
 key="$1"
@@ -155,26 +176,11 @@ done
 echo "Are you sure you want to rebuild YARN?"
 select yn in "Yes" "No"; do
     case $yn in
-        Yes) info "Rebuilding Hadoop/Yarn";;
-        No) exit;;
+        Yes)
+        main
+        ;;
+        No)
+        exit
+        ;;
     esac
 done
-
-# Default is just building yarn.
-if [[ $REBUILD == true ]]; then
-    warn "Doing complete rebuild of hadoop"
-
-    if [[ -e $TARGET/hadoop-3.0.0-SNAPSHOT ]]; then
-        warn "Deleting $TARGET/hadoop-3.0.0-SNAPSHOT"
-        rm -rf $TARGET/hadoop-3.0.0-SNAPSHOT
-    fi
-
-    build_hadoop
-    deploy_hadoop
-else
-    info "Just rebuilding YARN"
-
-    build_yarn
-    deploy_yarn
-fi
-

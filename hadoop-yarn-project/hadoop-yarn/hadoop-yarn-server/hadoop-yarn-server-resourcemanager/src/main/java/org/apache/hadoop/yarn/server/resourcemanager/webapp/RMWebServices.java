@@ -1359,7 +1359,7 @@ public class RMWebServices {
     }
     Resource r =
         Resource.newInstance(newApp.getResource().getMemory(), newApp
-          .getResource().getvCores());
+          .getResource().getvCores(), 0);
     return r;
   }
 

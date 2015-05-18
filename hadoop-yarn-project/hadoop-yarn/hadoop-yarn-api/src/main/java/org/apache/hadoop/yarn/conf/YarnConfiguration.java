@@ -817,6 +817,9 @@ public class YarnConfiguration extends Configuration {
   public static final String NM_VCORES = NM_PREFIX + "resource.cpu-vcores";
   public static final int DEFAULT_NM_VCORES = 8;
 
+  /** Number of default bandwidth **/
+  public static final int DEFAULT_NM_BANDWIDTH = 1024; // TODO: doesn't make sense atm, think of some unit...
+
   /** Percentage of overall CPU which can be allocated for containers. */
   public static final String NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT =
       NM_PREFIX + "resource.percentage-physical-cpu-limit";

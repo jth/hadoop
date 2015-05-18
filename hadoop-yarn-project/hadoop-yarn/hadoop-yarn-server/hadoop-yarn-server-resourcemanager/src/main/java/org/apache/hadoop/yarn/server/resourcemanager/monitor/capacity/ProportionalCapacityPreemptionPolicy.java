@@ -362,7 +362,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
     
     // based on ideal assignment computed above and current assignment we derive
     // how much preemption is required overall
-    Resource totPreemptionNeeded = Resource.newInstance(0, 0);
+    Resource totPreemptionNeeded = Resource.newInstance(0, 0, 0);
     for (TempQueuePerPartition t:queues) {
       if (Resources.greaterThan(rc, tot_guarant, t.current, t.idealAssigned)) {
         Resources.addTo(totPreemptionNeeded,
@@ -433,7 +433,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
     //assign all cluster resources until no more demand, or no resources are left
     while (!orderedByNeed.isEmpty()
        && Resources.greaterThan(rc,tot_guarant, unassigned,Resources.none())) {
-      Resource wQassigned = Resource.newInstance(0, 0);
+      Resource wQassigned = Resource.newInstance(0, 0, 0);
       // we compute normalizedGuarantees capacity based on currently active
       // queues
       resetCapacity(rc, unassigned, orderedByNeed, ignoreGuarantee);
@@ -450,7 +450,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
           .hasNext();) {
         TempQueuePerPartition sub = i.next();
         Resource wQavail = Resources.multiplyAndNormalizeUp(rc,
-            unassigned, sub.normalizedGuarantee, Resource.newInstance(1, 1));
+            unassigned, sub.normalizedGuarantee, Resource.newInstance(1, 1, 1));
         Resource wQidle = sub.offer(wQavail, rc, tot_guarant);
         Resource wQdone = Resources.subtract(wQavail, wQidle);
 
@@ -495,7 +495,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
    */
   private void resetCapacity(ResourceCalculator rc, Resource clusterResource,
       Collection<TempQueuePerPartition> queues, boolean ignoreGuar) {
-    Resource activeCap = Resource.newInstance(0, 0);
+    Resource activeCap = Resource.newInstance(0, 0, 0);
     
     if (ignoreGuar) {
       for (TempQueuePerPartition q : queues) {
@@ -660,7 +660,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
         }
 
         // preempt other containers
-        Resource skippedAMSize = Resource.newInstance(0, 0);
+        Resource skippedAMSize = Resource.newInstance(0, 0, 0);
         Iterator<FiCaSchedulerApp> desc =
             leafQueue.getOrderingPolicy().getPreemptionIterator();
         while (desc.hasNext()) {
@@ -860,7 +860,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
         // just ignore the error, this will be corrected when doing next check.
       }
 
-      Resource extra = Resource.newInstance(0, 0);
+      Resource extra = Resource.newInstance(0, 0, 0);
       if (Resources.greaterThan(rc, partitionResource, current, guaranteed)) {
         extra = Resources.subtract(current, guaranteed);
       }
@@ -877,11 +877,11 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
         }
         ret.setLeafQueue(l);
       } else {
-        Resource pending = Resource.newInstance(0, 0);
+        Resource pending = Resource.newInstance(0, 0, 0);
         ret =
             new TempQueuePerPartition(curQueue.getQueueName(), current, pending,
                 guaranteed, maxCapacity, false, partitionToLookAt);
-        Resource childrensPreemptable = Resource.newInstance(0, 0);
+        Resource childrensPreemptable = Resource.newInstance(0, 0, 0);
         for (CSQueue c : curQueue.getChildQueues()) {
           TempQueuePerPartition subq =
               cloneQueues(c, partitionResource, partitionToLookAt);
@@ -891,7 +891,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
         // untouchableExtra = max(extra - childrenPreemptable, 0)
         if (Resources.greaterThanOrEqual(
               rc, partitionResource, childrensPreemptable, extra)) {
-          ret.untouchableExtra = Resource.newInstance(0, 0);
+          ret.untouchableExtra = Resource.newInstance(0, 0, 0);
         } else {
           ret.untouchableExtra =
                 Resources.subtractFrom(extra, childrensPreemptable);
@@ -984,13 +984,13 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
       this.pending = pending;
       this.guaranteed = guaranteed;
       this.maxCapacity = maxCapacity;
-      this.idealAssigned = Resource.newInstance(0, 0);
-      this.actuallyPreempted = Resource.newInstance(0, 0);
-      this.toBePreempted = Resource.newInstance(0, 0);
+      this.idealAssigned = Resource.newInstance(0, 0, 0);
+      this.actuallyPreempted = Resource.newInstance(0, 0, 0);
+      this.toBePreempted = Resource.newInstance(0, 0, 0);
       this.normalizedGuarantee = Float.NaN;
       this.children = new ArrayList<TempQueuePerPartition>();
-      this.untouchableExtra = Resource.newInstance(0, 0);
-      this.preemptableExtra = Resource.newInstance(0, 0);
+      this.untouchableExtra = Resource.newInstance(0, 0, 0);
+      this.preemptableExtra = Resource.newInstance(0, 0, 0);
       this.preemptionDisabled = preemptionDisabled;
       this.partition = partition;
     }
@@ -1026,7 +1026,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
         Resource clusterResource) {
       Resource absMaxCapIdealAssignedDelta = Resources.componentwiseMax(
                       Resources.subtract(maxCapacity, idealAssigned),
-                      Resource.newInstance(0, 0));
+                      Resource.newInstance(0, 0, 0));
       // remain = avail - min(avail, (max - assigned), (current + pending - assigned))
       Resource accepted = 
           Resources.min(rc, clusterResource, 
@@ -1069,7 +1069,7 @@ public class ProportionalCapacityPreemptionPolicy implements SchedulingEditPolic
           toBePreempted = Resources.multiply(
               Resources.subtract(current, idealAssigned), scalingFactor);
       } else {
-        toBePreempted = Resource.newInstance(0, 0);
+        toBePreempted = Resource.newInstance(0, 0, 0);
       }
     }
 

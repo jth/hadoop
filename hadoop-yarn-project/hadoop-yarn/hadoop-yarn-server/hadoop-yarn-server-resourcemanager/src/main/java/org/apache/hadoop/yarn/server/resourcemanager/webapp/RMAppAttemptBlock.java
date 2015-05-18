@@ -87,7 +87,7 @@ public class RMAppAttemptBlock extends AppAttemptBlock{
           .th(".relaxLocality", "RelaxLocality")
           .th(".nodeLabelExpression", "NodeLabelExpression")._()._().tbody();
 
-    Resource totalResource = Resource.newInstance(0, 0);
+    Resource totalResource = Resource.newInstance(0, 0, 0);
     if (app.getResourceRequests() != null) {
       for (ResourceRequest request : app.getResourceRequests()) {
         if (request.getNumContainers() == 0) {

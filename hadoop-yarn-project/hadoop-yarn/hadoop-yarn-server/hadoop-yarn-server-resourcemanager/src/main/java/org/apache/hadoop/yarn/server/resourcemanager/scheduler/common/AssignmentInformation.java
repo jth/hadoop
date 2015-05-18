@@ -57,7 +57,7 @@ public class AssignmentInformation {
     this.operationDetails = new HashMap<>();
     for (Operation op : Operation.values()) {
       operationCounts.put(op, 0);
-      operationResources.put(op, Resource.newInstance(0, 0));
+      operationResources.put(op, Resource.newInstance(0, 0, 0));
       operationDetails.put(op, new ArrayList<AssignmentDetails>());
     }
   }

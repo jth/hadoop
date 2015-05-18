@@ -53,8 +53,18 @@ public class ResourcePBImpl extends Resource {
     }
     viaProto = false;
   }
-    
-  
+
+
+  @Override
+  public void setBandwidth(int bandwidth) {
+
+  }
+
+  @Override
+  public int getBandwidth() {
+    return 0;
+  }
+
   @Override
   public int getMemory() {
     ResourceProtoOrBuilder p = viaProto ? proto : builder;

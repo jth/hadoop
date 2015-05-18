@@ -175,6 +175,7 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
     public ContainerRequest(Resource capability, String[] nodes,
         String[] racks, Priority priority, boolean relaxLocality,
         String nodeLabelsExpression) {
+      LOG.info("JTH: Creating new ContainerRequest");
       // Validate request
       Preconditions.checkArgument(capability != null,
           "The Resource to be requested for each container " +

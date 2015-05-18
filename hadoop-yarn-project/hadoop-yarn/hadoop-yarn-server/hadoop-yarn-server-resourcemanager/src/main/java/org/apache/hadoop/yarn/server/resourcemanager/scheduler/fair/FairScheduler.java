@@ -312,6 +312,7 @@ public class FairScheduler extends
     rootQueue.recomputeShares();
     updateRootQueueMetrics();
 
+    // TODO: Look at this and remove that dummy...
     if (LOG.isDebugEnabled()) {
       if (--updatesToSkipForDebug < 0) {
         updatesToSkipForDebug = UPDATE_DEBUG_FREQUENCY;
@@ -319,7 +320,7 @@ public class FairScheduler extends
             "  Allocations: " + rootMetrics.getAllocatedResources() +
             "  Availability: " + Resource.newInstance(
             rootMetrics.getAvailableMB(),
-            rootMetrics.getAvailableVirtualCores()) +
+            rootMetrics.getAvailableVirtualCores(), 1024) +
             "  Demand: " + rootQueue.getDemand());
       }
     }

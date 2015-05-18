@@ -1873,7 +1873,7 @@ public class LeafQueue extends AbstractCSQueue {
   @VisibleForTesting
   public static class User {
     ResourceUsage userResourceUsage = new ResourceUsage();
-    volatile Resource userResourceLimit = Resource.newInstance(0, 0);
+    volatile Resource userResourceLimit = Resource.newInstance(0, 0, 0);
     int pendingApplications = 0;
     int activeApplications = 0;
 

@@ -966,7 +966,7 @@ public class CapacityScheduler extends
       LOG.debug("nodeUpdate: " + nm + " clusterResources: " + clusterResource);
     }
 
-    Resource releaseResources = Resource.newInstance(0, 0);
+    Resource releaseResources = Resource.newInstance(0, 0, 0);
 
     FiCaSchedulerNode node = getNode(nm.getNodeID());
     

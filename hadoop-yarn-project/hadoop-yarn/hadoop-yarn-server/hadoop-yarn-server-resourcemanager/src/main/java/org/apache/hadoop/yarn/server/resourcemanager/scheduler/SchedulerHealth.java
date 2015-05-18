@@ -75,7 +75,7 @@ public class SchedulerHealth {
     schedulerOperationCounts = new ConcurrentHashMap<>();
     schedulerOperationAggregateCounts = new ConcurrentHashMap<>();
     for (Operation op : Operation.values()) {
-      lastSchedulerRunDetails.put(op, Resource.newInstance(0, 0));
+      lastSchedulerRunDetails.put(op, Resource.newInstance(0, 0, 0));
       schedulerOperationCounts.put(op, 0L);
       schedulerHealthDetails.put(op, new DetailedInformation(0, null, null,
         null));

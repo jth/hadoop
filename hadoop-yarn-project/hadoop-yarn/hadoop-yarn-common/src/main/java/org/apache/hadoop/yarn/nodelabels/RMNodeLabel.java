@@ -36,12 +36,12 @@ public class RMNodeLabel implements Comparable<RMNodeLabel> {
   private boolean exclusive;
 
   public RMNodeLabel(NodeLabel nodeLabel) {
-    this(nodeLabel.getName(), Resource.newInstance(0, 0), 0,
+    this(nodeLabel.getName(), Resource.newInstance(0, 0, 0), 0,
         nodeLabel.isExclusive());
   }
 
   public RMNodeLabel(String labelName) {
-    this(labelName, Resource.newInstance(0, 0), 0,
+    this(labelName, Resource.newInstance(0, 0, 0), 0,
         NodeLabel.DEFAULT_NODE_LABEL_EXCLUSIVITY);
   }
   
