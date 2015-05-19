@@ -83,7 +83,7 @@ start_simple_app() {
 ## main ##
 
 if [ $# -ne 1 ]; then
-    fail "Provide the argument to be executed"
+    fail "Provide the number of containers as argument"
 else
     start_yarn
     start_simple_app $1

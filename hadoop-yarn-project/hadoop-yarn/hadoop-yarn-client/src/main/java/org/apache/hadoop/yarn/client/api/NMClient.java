@@ -95,6 +95,7 @@ public abstract class NMClient extends AbstractService {
    * @throws YarnException
    * @throws IOException
    */
+  // TODO JTH: Inspect this further...
   public abstract void stopContainer(ContainerId containerId, NodeId nodeId)
       throws YarnException, IOException;
 

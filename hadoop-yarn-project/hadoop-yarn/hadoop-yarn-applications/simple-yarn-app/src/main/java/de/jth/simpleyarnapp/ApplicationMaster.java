@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Random;
 
 public class ApplicationMaster implements AMRMClientAsync.CallbackHandler {
-
+    private final static long SLEEP_INTERVAL = 100; // Check every 100ms for completed containers
+    private final static long TIMEOUT = 20000; // Wait at most 20 seconds for a container to finish
     private final NMClient nmClient;
     private int numberContainers;
     private final YarnConfiguration configuration;
@@ -94,7 +95,8 @@ public class ApplicationMaster implements AMRMClientAsync.CallbackHandler {
 
     @Override
     public void onError(Throwable e) {
-
+        System.out.println("JTH: Something went wrong: " + e.getMessage());
+        // Possible to get the causing container here?
     }
 
     public boolean doneWithContainers() {
@@ -102,6 +104,7 @@ public class ApplicationMaster implements AMRMClientAsync.CallbackHandler {
     }
 
     public void runMainLoop() throws Exception {
+        long currentTime = 0;
         AMRMClientAsync<AMRMClient.ContainerRequest> rmClient = AMRMClientAsync.createAMRMClientAsync(100, this);
         rmClient.init(configuration);
         rmClient.start();
@@ -129,9 +132,15 @@ public class ApplicationMaster implements AMRMClientAsync.CallbackHandler {
 
         System.out.println("[AM] waiting for containers to finish");
         while (!doneWithContainers()) {
-            Thread.sleep(100);
+            Thread.sleep(SLEEP_INTERVAL);
+            currentTime += SLEEP_INTERVAL;
+            if (currentTime >= TIMEOUT) {
+                System.out.println("JTH: Timeout reached, killing running container");
+                break;
+            }
         }
 
+        // TODO: Get more information about specific containers
         System.out.println("[AM] unregisterApplicationMaster 0");
         // Un-register with ResourceManager
         rmClient.unregisterApplicationMaster(
