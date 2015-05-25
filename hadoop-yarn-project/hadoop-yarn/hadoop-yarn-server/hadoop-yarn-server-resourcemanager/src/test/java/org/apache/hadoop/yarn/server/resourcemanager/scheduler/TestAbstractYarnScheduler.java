@@ -224,7 +224,7 @@ public class TestAbstractYarnScheduler extends ParameterizedSchedulerTestBase {
     final int configuredMaxVCores = 20;
     final int configuredMaxMemory = 10 * 1024;
     Resource configuredMaximumResource = Resource.newInstance
-        (configuredMaxMemory, configuredMaxVCores);
+        (configuredMaxMemory, configuredMaxVCores, 1024);
 
     configureScheduler();
     YarnConfiguration conf = getConf();
@@ -242,9 +242,9 @@ public class TestAbstractYarnScheduler extends ParameterizedSchedulerTestBase {
       AbstractYarnScheduler scheduler = (AbstractYarnScheduler) rm
           .getResourceScheduler();
 
-      Resource emptyResource = Resource.newInstance(0, 0);
-      Resource fullResource1 = Resource.newInstance(1024, 5);
-      Resource fullResource2 = Resource.newInstance(2048, 10);
+      Resource emptyResource = Resource.newInstance(0, 0, 1024);
+      Resource fullResource1 = Resource.newInstance(1024, 5, 1024);
+      Resource fullResource2 = Resource.newInstance(2048, 10, 1024);
 
       SchedulerNode mockNode1 = mock(SchedulerNode.class);
       when(mockNode1.getNodeID()).thenReturn(NodeId.newInstance("foo", 8080));
@@ -285,7 +285,7 @@ public class TestAbstractYarnScheduler extends ParameterizedSchedulerTestBase {
     final int configuredMaxVCores = 20;
     final int configuredMaxMemory = 10 * 1024;
     Resource configuredMaximumResource = Resource.newInstance
-        (configuredMaxMemory, configuredMaxVCores);
+        (configuredMaxMemory, configuredMaxVCores, 1024);
 
     configureScheduler();
     YarnConfiguration conf = getConf();
@@ -304,10 +304,10 @@ public class TestAbstractYarnScheduler extends ParameterizedSchedulerTestBase {
           .getResourceScheduler();
       verifyMaximumResourceCapability(configuredMaximumResource, scheduler);
 
-      Resource resource1 = Resource.newInstance(2048, 5);
-      Resource resource2 = Resource.newInstance(4096, 10);
-      Resource resource3 = Resource.newInstance(512, 1);
-      Resource resource4 = Resource.newInstance(1024, 2);
+      Resource resource1 = Resource.newInstance(2048, 5, 1024);
+      Resource resource2 = Resource.newInstance(4096, 10, 1024);
+      Resource resource3 = Resource.newInstance(512, 1, 1024);
+      Resource resource4 = Resource.newInstance(1024, 2, 1024);
 
       RMNode node1 = MockNodes.newNodeInfo(
           0, resource1, 1, "127.0.0.2");

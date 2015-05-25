@@ -14,12 +14,12 @@ import java.util.Random;
 
 public class ApplicationMaster implements AMRMClientAsync.CallbackHandler {
     private final static long SLEEP_INTERVAL = 100; // Check every 100ms for completed containers
-    private final static long TIMEOUT = 20000; // Wait at most 20 seconds for a container to finish
+    private final static long TIMEOUT = 40000; // Wait at most 40 seconds for a container to finish
     private final NMClient nmClient;
     private int numberContainers;
     private final YarnConfiguration configuration;
     private final static int MIN_ITERATIONS = Short.MAX_VALUE;
-    private final static int MAX_ITERATIONS = Integer.MAX_VALUE;
+    private final static int MAX_ITERATIONS = Short.MAX_VALUE * 2;
     private final static String command =
             "/home/jth/work/MA/repos/hadoop/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/simple-yarn-app/src/main/c/build/pi";
 

@@ -508,7 +508,7 @@ public class TestRMNodeTransitions {
 
   private RMNodeImpl getRunningNode(String nmVersion, int port) {
     NodeId nodeId = BuilderUtils.newNodeId("localhost", port);
-    Resource capability = Resource.newInstance(4096, 4);
+    Resource capability = Resource.newInstance(4096, 4, 1024);
     RMNodeImpl node = new RMNodeImpl(nodeId, rmContext, null, 0, 0, null,
         capability, nmVersion);
     node.handle(new RMNodeStartedEvent(node.getNodeID(), null, null));
@@ -542,7 +542,7 @@ public class TestRMNodeTransitions {
   
   private RMNodeImpl getRebootedNode() {
     NodeId nodeId = BuilderUtils.newNodeId("localhost", 0);
-    Resource capability = Resource.newInstance(4096, 4);
+    Resource capability = Resource.newInstance(4096, 4, 1024);
     RMNodeImpl node = new RMNodeImpl(nodeId, rmContext,null, 0, 0,
         null, capability, null);
     node.handle(new RMNodeStartedEvent(node.getNodeID(), null, null));
@@ -607,7 +607,7 @@ public class TestRMNodeTransitions {
     assertEquals("Memory resource is not match.", oldCapacity.getMemory(), 4096);
     assertEquals("CPU resource is not match.", oldCapacity.getVirtualCores(), 4);
     node.handle(new RMNodeResourceUpdateEvent(node.getNodeID(),
-        ResourceOption.newInstance(Resource.newInstance(2048, 2), 
+        ResourceOption.newInstance(Resource.newInstance(2048, 2, 1024),
             RMNode.OVER_COMMIT_TIMEOUT_MILLIS_DEFAULT)));
     Resource newCapacity = node.getTotalCapability();
     assertEquals("Memory resource is not match.", newCapacity.getMemory(), 2048);
@@ -621,12 +621,12 @@ public class TestRMNodeTransitions {
   
   @Test
   public void testResourceUpdateOnNewNode() {
-    RMNodeImpl node = getNewNode(Resource.newInstance(4096, 4));
+    RMNodeImpl node = getNewNode(Resource.newInstance(4096, 4, 1024));
     Resource oldCapacity = node.getTotalCapability();
     assertEquals("Memory resource is not match.", oldCapacity.getMemory(), 4096);
     assertEquals("CPU resource is not match.", oldCapacity.getVirtualCores(), 4);
     node.handle(new RMNodeResourceUpdateEvent(node.getNodeID(),
-        ResourceOption.newInstance(Resource.newInstance(2048, 2), 
+        ResourceOption.newInstance(Resource.newInstance(2048, 2, 1024),
             RMNode.OVER_COMMIT_TIMEOUT_MILLIS_DEFAULT)));
     Resource newCapacity = node.getTotalCapability();
     assertEquals("Memory resource is not match.", newCapacity.getMemory(), 2048);
@@ -642,7 +642,7 @@ public class TestRMNodeTransitions {
     assertEquals("Memory resource is not match.", oldCapacity.getMemory(), 4096);
     assertEquals("CPU resource is not match.", oldCapacity.getVirtualCores(), 4);
     node.handle(new RMNodeResourceUpdateEvent(node.getNodeID(),
-        ResourceOption.newInstance(Resource.newInstance(2048, 2), 
+        ResourceOption.newInstance(Resource.newInstance(2048, 2, 1024),
             RMNode.OVER_COMMIT_TIMEOUT_MILLIS_DEFAULT)));
     Resource newCapacity = node.getTotalCapability();
     assertEquals("Memory resource is not match.", newCapacity.getMemory(), 2048);

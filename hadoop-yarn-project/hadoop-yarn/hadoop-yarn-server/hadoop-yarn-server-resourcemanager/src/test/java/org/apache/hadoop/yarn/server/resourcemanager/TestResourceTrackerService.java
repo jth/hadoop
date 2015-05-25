@@ -937,7 +937,7 @@ public class TestResourceTrackerService extends NodeLabelTestBase {
         NMContainerStatus.newInstance(
           ContainerId.newContainerId(
             ApplicationAttemptId.newInstance(app.getApplicationId(), 2), 1),
-          ContainerState.COMPLETE, Resource.newInstance(1024, 1),
+          ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1024),
           "Dummy Completed", 0, Priority.newInstance(10), 1234);
     rm.getResourceTrackerService().handleNMContainerStatus(report, null);
     verify(handler, never()).handle((Event) any());
@@ -948,7 +948,7 @@ public class TestResourceTrackerService extends NodeLabelTestBase {
     currentAttempt.setMasterContainer(null);
     report = NMContainerStatus.newInstance(
           ContainerId.newContainerId(currentAttempt.getAppAttemptId(), 0),
-          ContainerState.COMPLETE, Resource.newInstance(1024, 1),
+          ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1024),
           "Dummy Completed", 0, Priority.newInstance(10), 1234);
     rm.getResourceTrackerService().handleNMContainerStatus(report, null);
     verify(handler, never()).handle((Event)any());
@@ -960,7 +960,7 @@ public class TestResourceTrackerService extends NodeLabelTestBase {
     report = NMContainerStatus.newInstance(
           ContainerId.newContainerId(
             ApplicationAttemptId.newInstance(app.getApplicationId(), 2), 1),
-          ContainerState.COMPLETE, Resource.newInstance(1024, 1),
+          ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1024),
           "Dummy Completed", 0, Priority.newInstance(10), 1234);
     try {
       rm.getResourceTrackerService().handleNMContainerStatus(report, null);
@@ -975,7 +975,7 @@ public class TestResourceTrackerService extends NodeLabelTestBase {
     currentAttempt.setMasterContainer(null);
     report = NMContainerStatus.newInstance(
       ContainerId.newContainerId(currentAttempt.getAppAttemptId(), 0),
-      ContainerState.COMPLETE, Resource.newInstance(1024, 1),
+      ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1024),
       "Dummy Completed", 0, Priority.newInstance(10), 1234);
     try {
       rm.getResourceTrackerService().handleNMContainerStatus(report, null);

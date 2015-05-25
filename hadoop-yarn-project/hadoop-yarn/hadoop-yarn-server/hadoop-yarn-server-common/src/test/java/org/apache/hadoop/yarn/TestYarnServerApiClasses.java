@@ -257,7 +257,7 @@ public class TestYarnServerApiClasses {
   public void testRegisterNodeManagerRequestWithNullLabels() {
     RegisterNodeManagerRequest request =
         RegisterNodeManagerRequest.newInstance(
-            NodeId.newInstance("host", 1234), 1234, Resource.newInstance(0, 0),
+            NodeId.newInstance("host", 1234), 1234, Resource.newInstance(0, 0, 0),
             "version", null, null);
 
     // serialze to proto, and get request from proto
@@ -274,7 +274,7 @@ public class TestYarnServerApiClasses {
     HashSet<String> nodeLabels = getValidNodeLabels();
     RegisterNodeManagerRequest request =
         RegisterNodeManagerRequest.newInstance(
-            NodeId.newInstance("host", 1234), 1234, Resource.newInstance(0, 0),
+            NodeId.newInstance("host", 1234), 1234, Resource.newInstance(0, 0, 0),
             "version", null, null, nodeLabels);
 
     // serialze to proto, and get request from proto

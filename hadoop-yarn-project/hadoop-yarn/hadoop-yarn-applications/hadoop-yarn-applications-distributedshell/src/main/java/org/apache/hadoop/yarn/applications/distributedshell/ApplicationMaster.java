@@ -1056,7 +1056,7 @@ public class ApplicationMaster {
     // Set up resource type requirements
     // For now, memory and CPU are supported so we set memory and cpu requirements
     Resource capability = Resource.newInstance(containerMemory,
-      containerVirtualCores);
+      containerVirtualCores, 1024);
 
     ContainerRequest request = new ContainerRequest(capability, null, null,
         pri);

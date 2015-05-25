@@ -212,7 +212,7 @@ public class MRAppBenchmark {
                 RegisterApplicationMasterResponse response =
                     Records.newRecord(RegisterApplicationMasterResponse.class);
                 response.setMaximumResourceCapability(Resource.newInstance(
-                  10240, 1));
+                  10240, 1, 1024));
                 return response;
               }
 

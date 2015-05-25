@@ -64,9 +64,30 @@ start_yarn() {
     fi
 }
 
+build_app() {
+    log "Building C-part of yarn application"
+    cd $HOME/work/MA/repos/hadoop/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/simple-yarn-app/src/main/c/
+    mkdir build
+    if eval "cmake .."; then
+        print_ok
+    else
+        fail "cmake in `pwd` failed"
+    fi
+
+    if eval "make"; then
+       print_ok
+    else
+       fail "make in `pwd` failed"
+    fi
+}
+
 # $1 = number of containers
 start_simple_app() {
     change_dir $HADOOP_HOME    
+
+    if [[ ! -x "$HOME/work/MA/repos/hadoop/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/simple-yarn-app/src/main/c/build/pi" ]]; then 
+	build_app
+    fi
 
     cmd="$HADOOP_BIN jar $UM_LAUNCHER Client -classpath $SIMPLE_JAR \
     -cmd \"java de.jth.simpleyarnapp.ApplicationMaster $1\""

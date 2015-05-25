@@ -893,7 +893,7 @@ public class TestProportionalCapacityPreemptionPolicy {
     when(mCS.getRootQueue()).thenReturn(mRoot);
 
     clusterResources =
-      Resource.newInstance(leafAbsCapacities(qData[0], qData[7]), 0);
+      Resource.newInstance(leafAbsCapacities(qData[0], qData[7]), 0, 1024);
     when(mCS.getClusterResource()).thenReturn(clusterResources);
     when(lm.getResourceByLabel(anyString(), any(Resource.class))).thenReturn(
         clusterResources);
@@ -1005,10 +1005,10 @@ public class TestProportionalCapacityPreemptionPolicy {
     List<ApplicationAttemptId> appAttemptIdList = 
         new ArrayList<ApplicationAttemptId>();
     when(lq.getTotalResourcePending()).thenReturn(
-        Resource.newInstance(pending[i], 0));
+        Resource.newInstance(pending[i], 0, 1024));
     // need to set pending resource in resource usage as well
     ResourceUsage ru = new ResourceUsage();
-    ru.setPending(Resource.newInstance(pending[i], 0));
+    ru.setPending(Resource.newInstance(pending[i], 0, 1024));
     when(lq.getQueueResourceUsage()).thenReturn(ru);
     // consider moving where CapacityScheduler::comparator accessible
     final NavigableSet<FiCaSchedulerApp> qApps = new TreeSet<FiCaSchedulerApp>(
@@ -1060,7 +1060,7 @@ public class TestProportionalCapacityPreemptionPolicy {
     when(app.getApplicationAttemptId()).thenReturn(appAttId);
 
     int cAlloc = 0;
-    Resource unit = Resource.newInstance(gran, 0);
+    Resource unit = Resource.newInstance(gran, 0, 1024);
     List<RMContainer> cReserved = new ArrayList<RMContainer>();
     for (int i = 0; i < reserved; i += gran) {
       cReserved.add(mockContainer(appAttId, cAlloc, unit, priority.CONTAINER

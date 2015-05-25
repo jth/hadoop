@@ -61,8 +61,8 @@ build_hadoop() {
         info "Deleting ${tmp:1}"
         rm -f $HADOOP_TAR
     fi
-
-    build_cmd="mvn package -Pdist,native,docs,src -DskipTests -Dtar"
+    
+    build_cmd="mvn clean package -Pdist -Psrc -DskipTests -Dtar -Dmaven.javadoc.skip=true"
 
     info "Building hadoop (\033[01;36m$build_cmd\033[0m)..."
 
@@ -84,6 +84,11 @@ build_hadoop() {
 
 deploy_hadoop() {
     info "Extracting `basename $HADOOP_TAR` to $TARGET... "
+    if [[ ! -d $TARGET ]]; then
+	warn "$TARGET doesn't existing. Creating it."
+	mkdir -p $TARGET
+    fi
+
     if tar -xzf $HADOOP_TAR -C $TARGET; then
         print_ok
     else
@@ -94,7 +99,7 @@ deploy_hadoop() {
 build_yarn() {
     change_dir $YARN_SRC
 
-    build_cmd="mvn package -DskipTests"
+    build_cmd="mvn -T 8 package -DskipTests -Dmaven.javadoc.skip=true"
     echo -e "Building YARN (\033[01;36m$build_cmd\033[0m)..."
 
     if eval "$build_cmd" &> /tmp/build-log-yarn; then

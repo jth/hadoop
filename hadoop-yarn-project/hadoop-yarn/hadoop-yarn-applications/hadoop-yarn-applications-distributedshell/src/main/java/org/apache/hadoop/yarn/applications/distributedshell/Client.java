@@ -658,7 +658,7 @@ public class Client {
     // Set up resource type requirements
     // For now, both memory and vcores are supported, so we set memory and 
     // vcores requirements
-    Resource capability = Resource.newInstance(amMemory, amVCores);
+    Resource capability = Resource.newInstance(amMemory, amVCores, 1024);
     appContext.setResource(capability);
 
     // Service data is a binary blob that can be passed to the application

@@ -155,17 +155,17 @@ public class TestSchedulerHealth {
   public void testResourceUpdate() {
     SchedulerHealth sh = new SchedulerHealth();
     long now = Time.now();
-    sh.updateSchedulerRunDetails(now, Resource.newInstance(1024, 1),
-      Resource.newInstance(2048, 1));
+    sh.updateSchedulerRunDetails(now, Resource.newInstance(1024, 1, 1024),
+      Resource.newInstance(2048, 1, 1024));
     Assert.assertEquals(now, sh.getLastSchedulerRunTime());
-    Assert.assertEquals(Resource.newInstance(1024, 1),
+    Assert.assertEquals(Resource.newInstance(1024, 1, 1024),
       sh.getResourcesAllocated());
-    Assert.assertEquals(Resource.newInstance(2048, 1),
+    Assert.assertEquals(Resource.newInstance(2048, 1, 1024),
       sh.getResourcesReserved());
     now = Time.now();
-    sh.updateSchedulerReleaseDetails(now, Resource.newInstance(3072, 1));
+    sh.updateSchedulerReleaseDetails(now, Resource.newInstance(3072, 1, 1024));
     Assert.assertEquals(now, sh.getLastSchedulerRunTime());
-    Assert.assertEquals(Resource.newInstance(3072, 1),
+    Assert.assertEquals(Resource.newInstance(3072, 1, 1024),
       sh.getResourcesReleased());
   }
 
@@ -243,7 +243,7 @@ public class TestSchedulerHealth {
         ((CapacityScheduler) resourceManager.getResourceScheduler())
           .getSchedulerHealth();
     Assert.assertEquals(2, sh.getAllocationCount().longValue());
-    Assert.assertEquals(Resource.newInstance(3 * 1024, 2),
+    Assert.assertEquals(Resource.newInstance(3 * 1024, 2, 1024),
       sh.getResourcesAllocated());
     Assert.assertEquals(2, sh.getAggregateAllocationCount().longValue());
     Assert.assertEquals("host_0:1234", sh.getLastAllocationDetails()
@@ -258,7 +258,7 @@ public class TestSchedulerHealth {
 
     nodeUpdate(nm_0);
     Assert.assertEquals(1, sh.getAllocationCount().longValue());
-    Assert.assertEquals(Resource.newInstance(2 * 1024, 1),
+    Assert.assertEquals(Resource.newInstance(2 * 1024, 1, 1024),
       sh.getResourcesAllocated());
     Assert.assertEquals(3, sh.getAggregateAllocationCount().longValue());
     Assert.assertEquals("host_0:1234", sh.getLastAllocationDetails()
@@ -324,7 +324,7 @@ public class TestSchedulerHealth {
         ((CapacityScheduler) resourceManager.getResourceScheduler())
           .getSchedulerHealth();
     Assert.assertEquals(1, sh.getAllocationCount().longValue());
-    Assert.assertEquals(Resource.newInstance(1024, 1),
+    Assert.assertEquals(Resource.newInstance(1024, 1, 1024),
       sh.getResourcesAllocated());
     Assert.assertEquals(1, sh.getAggregateAllocationCount().longValue());
     Assert.assertEquals("host_0:1234", sh.getLastAllocationDetails()
@@ -340,7 +340,7 @@ public class TestSchedulerHealth {
     nodeUpdate(nm_0);
     Assert.assertEquals(0, sh.getAllocationCount().longValue());
     Assert.assertEquals(1, sh.getReservationCount().longValue());
-    Assert.assertEquals(Resource.newInstance(2 * 1024, 1),
+    Assert.assertEquals(Resource.newInstance(2 * 1024, 1, 1024),
       sh.getResourcesReserved());
     Assert.assertEquals(1, sh.getAggregateAllocationCount().longValue());
     Assert.assertEquals("host_0:1234", sh.getLastAllocationDetails()

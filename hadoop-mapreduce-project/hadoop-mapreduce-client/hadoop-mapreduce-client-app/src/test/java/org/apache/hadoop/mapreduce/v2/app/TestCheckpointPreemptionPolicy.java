@@ -96,7 +96,7 @@ public class TestCheckpointPreemptionPolicy {
           ? MRBuilderUtils.newTaskId(jid, i / 2, TaskType.MAP)
           : MRBuilderUtils.newTaskId(jid, i / 2 + 1, TaskType.REDUCE);
       assignedContainers.put(cId, MRBuilderUtils.newTaskAttemptId(tId, 0));
-      contToResourceMap.put(cId, Resource.newInstance(2 * minAlloc, 2));
+      contToResourceMap.put(cId, Resource.newInstance(2 * minAlloc, 2, 1024));
     }
 
     for (Map.Entry<ContainerId,TaskAttemptId> ent :
@@ -132,7 +132,7 @@ public class TestCheckpointPreemptionPolicy {
     };
 
     PreemptionMessage pM = generatePreemptionMessage(preemptedContainers,
-        contToResourceMap, Resource.newInstance(1024, 1), true);
+        contToResourceMap, Resource.newInstance(1024, 1, 1024), true);
 
     CheckpointAMPreemptionPolicy policy = new CheckpointAMPreemptionPolicy();
     policy.init(mActxt);
@@ -175,7 +175,7 @@ public class TestCheckpointPreemptionPolicy {
     };
 
     PreemptionMessage pM = generatePreemptionMessage(preemptedContainers,
-        contToResourceMap, Resource.newInstance(minAlloc, 1), false);
+        contToResourceMap, Resource.newInstance(minAlloc, 1, 1024), false);
 
     CheckpointAMPreemptionPolicy policy = new CheckpointAMPreemptionPolicy();
     policy.init(mActxt);
@@ -223,7 +223,7 @@ public class TestCheckpointPreemptionPolicy {
 
   private List<TaskAttemptId> validatePreemption(PreemptionMessage pM,
     CheckpointAMPreemptionPolicy policy, int supposedMemPreemption) {
-    Resource effectivelyPreempted = Resource.newInstance(0, 0);
+    Resource effectivelyPreempted = Resource.newInstance(0, 0, 0);
 
     List<TaskAttemptId> preempting = new ArrayList<TaskAttemptId>();
 
@@ -256,7 +256,7 @@ public class TestCheckpointPreemptionPolicy {
     Set<ContainerId> currentContPreemption = Collections.unmodifiableSet(
         new HashSet<ContainerId>(containerToPreempt));
     containerToPreempt.clear();
-    Resource tot = Resource.newInstance(0, 0);
+    Resource tot = Resource.newInstance(0, 0, 0);
     for(ContainerId c : currentContPreemption){
       Resources.addTo(tot,
           resPerCont.get(c));

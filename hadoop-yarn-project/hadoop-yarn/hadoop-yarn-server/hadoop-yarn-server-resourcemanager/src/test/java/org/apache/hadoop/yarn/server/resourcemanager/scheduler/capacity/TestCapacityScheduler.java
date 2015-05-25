@@ -726,7 +726,7 @@ public class TestCapacityScheduler {
     Map<NodeId, ResourceOption> nodeResourceMap = 
         new HashMap<NodeId, ResourceOption>();
     nodeResourceMap.put(nm1.getNodeId(), 
-        ResourceOption.newInstance(Resource.newInstance(2 * GB, 1), -1));
+        ResourceOption.newInstance(Resource.newInstance(2 * GB, 1, 1024), -1));
     UpdateNodeResourceRequest request = 
         UpdateNodeResourceRequest.newInstance(nodeResourceMap);
     AdminService as = ((MockRM)rm).getAdminService();
@@ -1064,8 +1064,8 @@ public class TestCapacityScheduler {
 
     // check values
     waitForAppPreemptionInfo(app0,
-        Resource.newInstance(CONTAINER_MEMORY * 3, 3), 0, 3,
-        Resource.newInstance(CONTAINER_MEMORY * 3, 3), false, 3);
+        Resource.newInstance(CONTAINER_MEMORY * 3, 3, 1024), 0, 3,
+        Resource.newInstance(CONTAINER_MEMORY * 3, 3, 1024), false, 3);
 
     // kill app0-attempt0 AM container
     cs.killContainer(schedulerAppAttempt.getRMContainer(app0
@@ -1076,8 +1076,8 @@ public class TestCapacityScheduler {
 
     // check values
     waitForAppPreemptionInfo(app0,
-        Resource.newInstance(CONTAINER_MEMORY * 4, 4), 1, 3,
-        Resource.newInstance(0, 0), false, 0);
+        Resource.newInstance(CONTAINER_MEMORY * 4, 4, 1024), 1, 3,
+        Resource.newInstance(0, 0, 1024), false, 0);
 
     // launch app0-attempt1
     MockAM am1 = launchAM(app0, rm1, nm1);
@@ -1094,8 +1094,8 @@ public class TestCapacityScheduler {
 
     // check values
     waitForAppPreemptionInfo(app0,
-        Resource.newInstance(CONTAINER_MEMORY * 7, 7), 1, 6,
-        Resource.newInstance(CONTAINER_MEMORY * 3, 3), false, 3);
+        Resource.newInstance(CONTAINER_MEMORY * 7, 7, 1024), 1, 6,
+        Resource.newInstance(CONTAINER_MEMORY * 3, 3, 1024), false, 3);
 
     rm1.stop();
   }
@@ -2735,7 +2735,7 @@ public class TestCapacityScheduler {
     int amMemory = 50;
     assertTrue("AM memory is greater than or equql to minAllocation",
         amMemory < minAllocMb);
-    Resource minAllocResource = Resource.newInstance(minAllocMb, 1);
+    Resource minAllocResource = Resource.newInstance(minAllocMb, 1, 1024);
     String queueName = "a1";
     RMApp rmApp = rm.submitApp(amMemory, "app-1", "user_0", null, queueName);
        
@@ -2790,12 +2790,12 @@ public class TestCapacityScheduler {
     Assert.assertNotNull(attempt);
 
     Assert
-        .assertEquals(Resource.newInstance(0, 0), allocate.getResourceLimit());
-    Assert.assertEquals(Resource.newInstance(0, 0),
+        .assertEquals(Resource.newInstance(0, 0, 1024), allocate.getResourceLimit());
+    Assert.assertEquals(Resource.newInstance(0, 0, 1024),
         attemptMetric.getApplicationAttemptHeadroom());
 
     // Add a node to cluster
-    Resource newResource = Resource.newInstance(4 * GB, 1);
+    Resource newResource = Resource.newInstance(4 * GB, 1, 1024);
     RMNode node = MockNodes.newNodeInfo(0, newResource, 1, "127.0.0.1");
     cs.handle(new NodeAddedSchedulerEvent(node));
 
