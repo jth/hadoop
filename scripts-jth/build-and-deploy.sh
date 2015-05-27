@@ -73,7 +73,7 @@ build_hadoop() {
     fi
 
     info "Installing into maven cache..."
-    if eval "mvn install -DskipTests &>> /tmp/build-log-hadoop"; then
+    if eval "mvn install -DskipTests -Dmaven.javadoc.skip=true &>> /tmp/build-log-hadoop"; then
         print_ok
     else
         fail "Installing hadoop jars into maven cache failed. Look at /tmp/build-log/hadoop for details."

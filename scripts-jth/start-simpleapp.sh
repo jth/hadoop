@@ -92,6 +92,8 @@ start_simple_app() {
     cmd="$HADOOP_BIN jar $UM_LAUNCHER Client -classpath $SIMPLE_JAR \
     -cmd \"java de.jth.simpleyarnapp.ApplicationMaster $1\""
 
+    info "Executing $cmd"
+
     if eval "$cmd"; then
         print_ok
     else
