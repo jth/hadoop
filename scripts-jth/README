@@ -1,0 +1,5 @@
+Contains scripts for simplify and accelearted the building and deployment of hadoop.
+
+- build-and-deploy: Script for building hadoop completely or just YARN
+- build-simpleapp: Builds and deploys the simple app written for testing purposes
+- run-simpleapp: Runs the simple app and checks if it was succesful 

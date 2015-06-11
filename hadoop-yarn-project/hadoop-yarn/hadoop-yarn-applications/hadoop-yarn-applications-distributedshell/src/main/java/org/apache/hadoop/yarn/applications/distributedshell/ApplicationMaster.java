@@ -859,13 +859,9 @@ public class ApplicationMaster {
           System.out.println("Releasing running container " + runningContainers.get(0).toString());
           //amRMClient.releaseAssignedContainer(runningContainers.get(0));
           try {
+            // Find some better way to get the NodeId
+            stopContainer(runningContainers.get(0), nodeId);
             System.out.println("Stopping container " + runningContainers.get(0) + " on Node " + nodeId.toString());
-            nmClientAsync.getClient().stopContainer(runningContainers.get(0), nodeId);
-            System.out.println("Container stop request finished");
-            runningContainers.remove(runningContainers.get(0));
-            //numRequestedContainers.decrementAndGet();
-            numCompletedContainers.incrementAndGet();
-            //numTotalContainers--;
           } catch (YarnException | IOException e) {
             throw new RuntimeException("Couldn't stop container " + runningContainers.get(0).toString() + ". Reason: " + e.getMessage());
           }
@@ -880,6 +876,16 @@ public class ApplicationMaster {
 
       System.out.println("JTH: Progress (based on completed containers): " + progress);
       return progress;
+    }
+
+    private void stopContainer(ContainerId containerId, NodeId nodeId) throws IOException, YarnException {
+      nmClientAsync.getClient().stopContainer(containerId, nodeId);
+      System.out.println("Container stop request finished");
+      runningContainers.remove(runningContainers.get(0));
+      //numRequestedContainers.decrementAndGet();
+      numCompletedContainers.incrementAndGet();
+      //numTotalContainers--;
+
     }
 
     private void askForNewContainer() {
