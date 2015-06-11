@@ -245,12 +245,14 @@ public class MRAppMaster extends CompositeService {
       long appSubmitTime) {
     this(applicationAttemptId, containerId, nmHost, nmPort, nmHttpPort,
         new SystemClock(), appSubmitTime);
+    System.out.println("JTH: MRAppMaster() constructor 1");
   }
 
   public MRAppMaster(ApplicationAttemptId applicationAttemptId,
       ContainerId containerId, String nmHost, int nmPort, int nmHttpPort,
       Clock clock, long appSubmitTime) {
     super(MRAppMaster.class.getName());
+    System.out.println("JTH: MRAppMaster() constructor 2");
     this.clock = clock;
     this.startTime = clock.getTime();
     this.appSubmitTime = appSubmitTime;

@@ -126,7 +126,7 @@ public class Client {
   // Queue for App master
   private String amQueue = "";
   // Amt. of memory resource to request for to run the App Master
-  private int amMemory = 10; 
+  private int amMemory = 256;
   // Amt. of virtual core resource to request for to run the App Master
   private int amVCores = 1;
 

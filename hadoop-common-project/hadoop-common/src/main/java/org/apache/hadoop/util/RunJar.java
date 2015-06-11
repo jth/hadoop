@@ -144,6 +144,8 @@ public class RunJar {
       System.exit(-1);
     }
 
+    System.out.println("JTH: RunJar.run()");
+
     int firstArg = 0;
     String fileName = args[firstArg++];
     File file = new File(fileName);
@@ -218,6 +220,7 @@ public class RunJar {
     String[] newArgs = Arrays.asList(args)
       .subList(firstArg, args.length).toArray(new String[0]);
     try {
+      System.out.println("JTH args: " + Arrays.toString(args));
       main.invoke(null, new Object[] { newArgs });
     } catch (InvocationTargetException e) {
       throw e.getTargetException();
