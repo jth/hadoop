@@ -28,7 +28,17 @@ import org.apache.hadoop.yarn.util.Records;
 public class Resources {
   
   // Java doesn't have const :(
-  private static final Resource NONE = new Resource() {
+  private static final Resource NONE = new Resource() { // What means NONE?
+
+    @Override
+    public void setBandwidth(int bandwidth) {
+      throw new RuntimeException("NONE cannot be modified!");
+    }
+
+    @Override
+    public int getBandwidth() {
+      return 0;
+    }
 
     @Override
     public int getMemory() {
@@ -62,6 +72,16 @@ public class Resources {
   };
   
   private static final Resource UNBOUNDED = new Resource() {
+
+    @Override
+    public void setBandwidth(int bandwidth) {
+      throw new RuntimeException("NONE cannot be modified!");
+    }
+
+    @Override
+    public int getBandwidth() {
+      return Integer.MAX_VALUE;
+    }
 
     @Override
     public int getMemory() {

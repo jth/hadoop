@@ -1611,7 +1611,7 @@ public class TestRMContainerAllocator {
     }
     TaskAttemptId attemptId = MRBuilderUtils.newTaskAttemptId(taskId,
         taskAttemptId);
-    Resource containerNeed = Resource.newInstance(memory, 1);
+    Resource containerNeed = Resource.newInstance(memory, 1, 1024);
     if (earlierFailedAttempt) {
       return ContainerRequestEvent
           .createContainerRequestEventForFailedContainer(attemptId,
@@ -1710,7 +1710,7 @@ public class TestRMContainerAllocator {
       when(context.getApplicationAttemptId()).thenReturn(appAttemptId);
       when(context.getJob(isA(JobId.class))).thenReturn(job);
       when(context.getClusterInfo()).thenReturn(
-        new ClusterInfo(Resource.newInstance(10240, 1)));
+        new ClusterInfo(Resource.newInstance(10240, 1, 1024)));
       when(context.getEventHandler()).thenReturn(new EventHandler() {
         @Override
         public void handle(Event event) {
@@ -1798,7 +1798,7 @@ public class TestRMContainerAllocator {
 
     @Override
     protected Resource getMaxContainerCapability() {
-      return Resource.newInstance(10240, 1);
+      return Resource.newInstance(10240, 1, 1024);
     }
 
     public void sendRequest(ContainerRequestEvent req) {
@@ -2690,8 +2690,8 @@ public class TestRMContainerAllocator {
         RegisterApplicationMasterRequest request) throws YarnException,
         IOException {
       return RegisterApplicationMasterResponse.newInstance(
-          Resource.newInstance(512, 1),
-          Resource.newInstance(512000, 1024),
+          Resource.newInstance(512, 1, 1024),
+          Resource.newInstance(512000, 1024, 1024),
           Collections.<ApplicationAccessType,String>emptyMap(),
           ByteBuffer.wrap("fake_key".getBytes()),
           Collections.<Container>emptyList(),
@@ -2724,7 +2724,7 @@ public class TestRMContainerAllocator {
           request.getResponseId(),
           containersToComplete, containersToAllocate,
           Collections.<NodeReport>emptyList(),
-          Resource.newInstance(512000, 1024), null, 10, null,
+          Resource.newInstance(512000, 1024, 1024), null, 10, null,
           Collections.<NMToken>emptyList());
       containersToComplete.clear();
       containersToAllocate.clear();
@@ -2738,7 +2738,7 @@ public class TestRMContainerAllocator {
           : RMContainerAllocator.PRIORITY_MAP;
       Container container = Container.newInstance(containerId,
           NodeId.newInstance(nodeName, 1234), nodeName + ":5678",
-        Resource.newInstance(1024, 1), priority, null);
+        Resource.newInstance(1024, 1, 1024), priority, null);
       containersToAllocate.add(container);
       return containerId;
     }

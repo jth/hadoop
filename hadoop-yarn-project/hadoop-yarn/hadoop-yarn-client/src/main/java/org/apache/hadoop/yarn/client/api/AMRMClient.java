@@ -175,6 +175,7 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
     public ContainerRequest(Resource capability, String[] nodes,
         String[] racks, Priority priority, boolean relaxLocality,
         String nodeLabelsExpression) {
+      System.out.println("JTH: Creating new ContainerRequest");
       // Validate request
       Preconditions.checkArgument(capability != null,
           "The Resource to be requested for each container " +
@@ -186,7 +187,14 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
                   && (nodes == null || nodes.length == 0)),
               "Can't turn off locality relaxation on a " + 
               "request with no location constraints");
+      // JTH: Try to change capability on the fly
+      System.out.println("JTH: Changing the capabilities of the ContainerRequest");
       this.capability = capability;
+      this.capability.setMemory(128);
+      this.capability.setBandwidth(1024);
+      this.capability.setVirtualCores(1);
+      System.out.println("JTH: Finished changeing capabilities of Container");
+      // Done
       this.nodes = (nodes != null ? ImmutableList.copyOf(nodes) : null);
       this.racks = (racks != null ? ImmutableList.copyOf(racks) : null);
       this.priority = priority;

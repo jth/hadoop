@@ -174,7 +174,10 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
     LOG.info("Nodemanager resources: memory set to " + memoryMb + "MB.");
     LOG.info("Nodemanager resources: vcores set to " + virtualCores + ".");
 
-    this.totalResource = Resource.newInstance(memoryMb, virtualCores);
+    // TODO: Isn't configurable at the moment
+    int virtualBandwidth = YarnConfiguration.DEFAULT_NM_BANDWIDTH;
+
+    this.totalResource = Resource.newInstance(memoryMb, virtualCores, virtualBandwidth);
     metrics.addResource(totalResource);
     this.tokenKeepAliveEnabled = isTokenKeepAliveEnabled(conf);
     this.tokenRemovalDelayMs =

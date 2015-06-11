@@ -130,7 +130,7 @@ public class TestRMAppLogAggregationStatus {
 
     // This application will be running on two nodes
     NodeId nodeId1 = NodeId.newInstance("localhost", 1234);
-    Resource capability = Resource.newInstance(4096, 4);
+    Resource capability = Resource.newInstance(4096, 4, 1024);
     RMNodeImpl node1 =
         new RMNodeImpl(nodeId1, rmContext, null, 0, 0, null, capability, null);
     node1.handle(new RMNodeStartedEvent(nodeId1, null, null));
@@ -486,7 +486,7 @@ public class TestRMAppLogAggregationStatus {
     ApplicationSubmissionContext submissionContext =
         ApplicationSubmissionContext.newInstance(appId, "test", "default",
           Priority.newInstance(0), null, false, true,
-          2, Resource.newInstance(10, 2), "test");
+          2, Resource.newInstance(10, 2, 1024), "test");
     return new RMAppImpl(this.appId, this.rmContext,
       conf, "test", "test", "default", submissionContext,
       this.rmContext.getScheduler(),

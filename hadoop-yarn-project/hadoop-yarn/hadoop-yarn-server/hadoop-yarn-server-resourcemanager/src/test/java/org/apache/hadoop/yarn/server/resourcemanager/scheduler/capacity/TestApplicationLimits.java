@@ -169,21 +169,21 @@ public class TestApplicationLimits {
     // am limit is 4G initially (based on the queue absolute capacity)
     // when there is only 1 user, and drops to 2G (the userlimit) when there
     // is a second user
-    Resource clusterResource = Resource.newInstance(80 * GB, 40);
+    Resource clusterResource = Resource.newInstance(80 * GB, 40, 1024);
     queue.updateClusterResource(clusterResource, new ResourceLimits(
         clusterResource));
     
     ActiveUsersManager activeUsersManager = mock(ActiveUsersManager.class);
     when(queue.getActiveUsersManager()).thenReturn(activeUsersManager);
     
-    assertEquals(Resource.newInstance(8 * GB, 1), queue.getAMResourceLimit());
-    assertEquals(Resource.newInstance(4 * GB, 1),
+    assertEquals(Resource.newInstance(8 * GB, 1, 1024), queue.getAMResourceLimit());
+    assertEquals(Resource.newInstance(4 * GB, 1, 1024),
       queue.getUserAMResourceLimit());
     
     // Two apps for user_0, both start
     int APPLICATION_ID = 0;
     FiCaSchedulerApp app_0 = getMockApplication(APPLICATION_ID++, user_0, 
-      Resource.newInstance(2 * GB, 1));
+      Resource.newInstance(2 * GB, 1, 1024));
     queue.submitApplicationAttempt(app_0, user_0);
     assertEquals(1, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -193,7 +193,7 @@ public class TestApplicationLimits {
     when(activeUsersManager.getNumActiveUsers()).thenReturn(1);
 
     FiCaSchedulerApp app_1 = getMockApplication(APPLICATION_ID++, user_0, 
-      Resource.newInstance(2 * GB, 1));
+      Resource.newInstance(2 * GB, 1, 1024));
     queue.submitApplicationAttempt(app_1, user_0);
     assertEquals(2, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -201,13 +201,13 @@ public class TestApplicationLimits {
     assertEquals(0, queue.getNumPendingApplications(user_0));
     
     // AMLimits unchanged
-    assertEquals(Resource.newInstance(8 * GB, 1), queue.getAMResourceLimit());
-    assertEquals(Resource.newInstance(4 * GB, 1),
+    assertEquals(Resource.newInstance(8 * GB, 1, 1024), queue.getAMResourceLimit());
+    assertEquals(Resource.newInstance(4 * GB, 1, 1024),
       queue.getUserAMResourceLimit());
     
     // One app for user_1, starts
     FiCaSchedulerApp app_2 = getMockApplication(APPLICATION_ID++, user_1, 
-      Resource.newInstance(2 * GB, 1));
+      Resource.newInstance(2 * GB, 1, 1024));
     queue.submitApplicationAttempt(app_2, user_1);
     assertEquals(3, queue.getNumActiveApplications());
     assertEquals(0, queue.getNumPendingApplications());
@@ -218,13 +218,13 @@ public class TestApplicationLimits {
     
     // Now userAMResourceLimit drops to the queue configured 50% as there is
     // another user active
-    assertEquals(Resource.newInstance(8 * GB, 1), queue.getAMResourceLimit());
-    assertEquals(Resource.newInstance(2 * GB, 1),
+    assertEquals(Resource.newInstance(8 * GB, 1, 1024), queue.getAMResourceLimit());
+    assertEquals(Resource.newInstance(2 * GB, 1, 1024),
       queue.getUserAMResourceLimit());
     
     // Second user_1 app cannot start
     FiCaSchedulerApp app_3 = getMockApplication(APPLICATION_ID++, user_1, 
-      Resource.newInstance(2 * GB, 1));
+      Resource.newInstance(2 * GB, 1, 1024));
     queue.submitApplicationAttempt(app_3, user_1);
     assertEquals(3, queue.getNumActiveApplications());
     assertEquals(1, queue.getNumPendingApplications());
@@ -278,11 +278,11 @@ public class TestApplicationLimits {
     		" UserAMResourceLimit=" + 
     		queue.getUserAMResourceLimit());
     
-    Resource amResourceLimit = Resource.newInstance(160 * GB, 1);
+    Resource amResourceLimit = Resource.newInstance(160 * GB, 1, 1024);
     assertEquals(queue.getAMResourceLimit(), amResourceLimit);
     assertEquals(queue.getAMResourceLimit(), amResourceLimit);
     assertEquals(queue.getUserAMResourceLimit(), 
-      Resource.newInstance(80*GB, 1));
+      Resource.newInstance(80*GB, 1, 1024));
     
     // Assert in metrics
     assertEquals(queue.getMetrics().getAMResourceLimitMB(),
@@ -300,9 +300,9 @@ public class TestApplicationLimits {
     root.updateClusterResource(clusterResource, new ResourceLimits(
         clusterResource));
     
-    assertEquals(queue.getAMResourceLimit(), Resource.newInstance(192*GB, 1));
+    assertEquals(queue.getAMResourceLimit(), Resource.newInstance(192*GB, 1, 1024));
     assertEquals(queue.getUserAMResourceLimit(), 
-      Resource.newInstance(96*GB, 1));
+      Resource.newInstance(96*GB, 1, 1024));
     
     assertEquals(
         (int)(clusterResource.getMemory() * queue.getAbsoluteCapacity()),
@@ -350,9 +350,9 @@ public class TestApplicationLimits {
           queue.getQueuePath())
         );
     
-    assertEquals(queue.getAMResourceLimit(), Resource.newInstance(800*GB, 1));
+    assertEquals(queue.getAMResourceLimit(), Resource.newInstance(800*GB, 1, 1024));
     assertEquals(queue.getUserAMResourceLimit(), 
-      Resource.newInstance(400*GB, 1));
+      Resource.newInstance(400*GB, 1, 1024));
 
     // Change the per-queue max applications.
     csConf.setInt(
@@ -380,8 +380,8 @@ public class TestApplicationLimits {
     final String user_1 = "user_1";
     final String user_2 = "user_2";
     
-    assertEquals(Resource.newInstance(16 * GB, 1), queue.getAMResourceLimit());
-    assertEquals(Resource.newInstance(8 * GB, 1),
+    assertEquals(Resource.newInstance(16 * GB, 1, 1024), queue.getAMResourceLimit());
+    assertEquals(Resource.newInstance(8 * GB, 1, 1024),
       queue.getUserAMResourceLimit());
     
     int APPLICATION_ID = 0;

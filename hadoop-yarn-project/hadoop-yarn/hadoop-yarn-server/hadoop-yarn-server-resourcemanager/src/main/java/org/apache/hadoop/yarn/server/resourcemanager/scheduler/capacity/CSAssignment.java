@@ -48,7 +48,7 @@ public class CSAssignment {
   }
 
   public CSAssignment(boolean skipped) {
-    this(Resource.newInstance(0, 0), NodeType.NODE_LOCAL, null, null, skipped,
+    this(Resource.newInstance(0, 0, 0), NodeType.NODE_LOCAL, null, null, skipped,
       false);
   }
 

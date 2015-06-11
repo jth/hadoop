@@ -274,7 +274,7 @@ public class TestCgroupsLCEResourcesHandler {
 
     // check the controller paths map isn't empty
     ContainerId id = ContainerId.fromString("container_1_1_1_1");
-    handler.preExecute(id, Resource.newInstance(1024, 1));
+    handler.preExecute(id, Resource.newInstance(1024, 1, 1024));
     Assert.assertNotNull(handler.getControllerPaths());
     // check values
     // default case - files shouldn't exist, strict mode off by default

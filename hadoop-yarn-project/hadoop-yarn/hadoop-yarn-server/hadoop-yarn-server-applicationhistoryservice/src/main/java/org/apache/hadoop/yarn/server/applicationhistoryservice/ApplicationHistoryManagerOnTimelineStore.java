@@ -433,6 +433,7 @@ public class ApplicationHistoryManagerOnTimelineStore extends AbstractService
       TimelineEntity entity, String serverHttpAddress, String user) {
     int allocatedMem = 0;
     int allocatedVcore = 0;
+    int allocatedBandwidth = 1024; // TODO: Just some dummy to get Yarn to compile
     String allocatedHost = null;
     int allocatedPort = -1;
     int allocatedPriority = 0;
@@ -444,7 +445,7 @@ public class ApplicationHistoryManagerOnTimelineStore extends AbstractService
     String nodeHttpAddress = null;
     Map<String, Object> entityInfo = entity.getOtherInfo();
     if (entityInfo != null) {
-      if (entityInfo
+        if (entityInfo
           .containsKey(ContainerMetricsConstants.ALLOCATED_MEMORY_ENTITY_INFO)) {
         allocatedMem = (Integer) entityInfo.get(
                 ContainerMetricsConstants.ALLOCATED_MEMORY_ENTITY_INFO);
@@ -523,7 +524,7 @@ public class ApplicationHistoryManagerOnTimelineStore extends AbstractService
         user);
     return ContainerReport.newInstance(
         ConverterUtils.toContainerId(entity.getEntityId()),
-        Resource.newInstance(allocatedMem, allocatedVcore),
+        Resource.newInstance(allocatedMem, allocatedVcore, allocatedBandwidth),
         NodeId.newInstance(allocatedHost, allocatedPort),
         Priority.newInstance(allocatedPriority),
         createdTime, finishedTime, diagnosticsInfo, logUrl, exitStatus, state,

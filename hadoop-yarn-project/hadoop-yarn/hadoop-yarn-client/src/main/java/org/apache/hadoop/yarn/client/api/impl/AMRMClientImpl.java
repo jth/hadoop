@@ -483,6 +483,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   public synchronized void releaseAssignedContainer(ContainerId containerId) {
     Preconditions.checkArgument(containerId != null,
         "ContainerId can not be null.");
+    System.out.println("JTH: releaseAssignedContainer");
     pendingRelease.add(containerId);
     release.add(containerId);
   }

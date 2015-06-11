@@ -66,11 +66,26 @@ public class RMAppAttemptBlock extends AppAttemptBlock{
     this.conf = conf;
   }
 
+  @Override
+  protected void render(Block html) {
+    super.render(html);
+    createContainerLocalityTable(html);
+    createResourceRequestsTable(html);
+  }
+
   private void createResourceRequestsTable(Block html) {
     AppInfo app =
         new AppInfo(rm, rm.getRMContext().getRMApps()
           .get(this.appAttemptId.getApplicationId()), true,
           WebAppUtils.getHttpSchemePrefix(conf));
+    TBODY<TABLE<Hamlet>> tbody =
+        html.table("#ResourceRequests").thead().tr()
+          .th(".priority", "Priority")
+          .th(".resourceName", "ResourceName")
+          .th(".totalResource", "Capability")
+          .th(".numContainers", "NumContainers")
+          .th(".relaxLocality", "RelaxLocality")
+          .th(".nodeLabelExpression", "NodeLabelExpression")._()._().tbody();
 
     List<ResourceRequest> resourceRequests = app.getResourceRequests();
     if (resourceRequests == null || resourceRequests.isEmpty()) {

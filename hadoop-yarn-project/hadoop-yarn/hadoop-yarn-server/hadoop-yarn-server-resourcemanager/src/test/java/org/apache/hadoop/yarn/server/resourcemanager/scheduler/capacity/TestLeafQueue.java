@@ -297,16 +297,16 @@ public class TestLeafQueue {
     assertEquals(0.1, c.getAbsoluteMaximumCapacity(), epsilon);
 
 	  //Verify the value for getAMResourceLimit for queues with < .1 maxcap
-	  Resource clusterResource = Resource.newInstance(50 * GB, 50);
+	  Resource clusterResource = Resource.newInstance(50 * GB, 50, 1024);
 	  
     a.updateClusterResource(clusterResource,
         new ResourceLimits(clusterResource));
-	  assertEquals(Resource.newInstance(1 * GB, 1), 
+	  assertEquals(Resource.newInstance(1 * GB, 1, 1024),
 	    a.getAMResourceLimit());
     
 	  b.updateClusterResource(clusterResource,
         new ResourceLimits(clusterResource));
-	  assertEquals(Resource.newInstance(5 * GB, 1), 
+	  assertEquals(Resource.newInstance(5 * GB, 1, 1024),
 	    b.getAMResourceLimit());
   }
  
@@ -433,7 +433,7 @@ public class TestLeafQueue {
         .getMockApplicationAttemptId(0, 2);
     FiCaSchedulerApp app_1 = new FiCaSchedulerApp(appAttemptId_1, user_0, a, null,
         spyRMContext);
-    app_1.setAMResource(Resource.newInstance(100, 1));
+    app_1.setAMResource(Resource.newInstance(100, 1, 1024));
     a.submitApplicationAttempt(app_1, user_0); // same user
 
     assertEquals(1, a.getMetrics().getAppsSubmitted());

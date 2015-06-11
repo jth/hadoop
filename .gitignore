@@ -13,6 +13,8 @@
 .classpath
 .project
 .settings
+.ycm_extra_conf.py
+.ycm_extra_conf.pyc
 target
 build
 hadoop-common-project/hadoop-kms/downloads/
