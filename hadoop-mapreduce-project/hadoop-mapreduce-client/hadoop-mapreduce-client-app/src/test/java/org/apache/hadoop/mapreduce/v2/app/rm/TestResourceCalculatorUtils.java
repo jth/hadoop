@@ -29,9 +29,9 @@ import static org.apache.hadoop.yarn.proto.YarnServiceProtos.*;
 public class TestResourceCalculatorUtils {
   @Test
   public void testComputeAvailableContainers() throws Exception {
-    Resource clusterAvailableResources = Resource.newInstance(81920, 40);
+    Resource clusterAvailableResources = Resource.newInstance(81920, 40, 1000);
 
-    Resource nonZeroResource = Resource.newInstance(1024, 2);
+    Resource nonZeroResource = Resource.newInstance(1024, 2, 100);
 
     int expectedNumberOfContainersForMemory = 80;
     int expectedNumberOfContainersForCPU = 20;
@@ -41,14 +41,14 @@ public class TestResourceCalculatorUtils {
         expectedNumberOfContainersForCPU);
 
     Resource zeroMemoryResource = Resource.newInstance(0,
-        nonZeroResource.getVirtualCores());
+        nonZeroResource.getVirtualCores(), 1000);
 
     verifyDifferentResourceTypes(clusterAvailableResources, zeroMemoryResource,
         Integer.MAX_VALUE,
         expectedNumberOfContainersForCPU);
 
     Resource zeroCpuResource = Resource.newInstance(nonZeroResource.getMemory(),
-        0);
+        0, 100);
 
     verifyDifferentResourceTypes(clusterAvailableResources, zeroCpuResource,
         expectedNumberOfContainersForMemory,

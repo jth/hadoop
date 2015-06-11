@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class TestResources {
   
   public Resource createResource(int memory, int vCores) {
-    return Resource.newInstance(memory, vCores);
+    return Resource.newInstance(memory, vCores, 1024);
   }
 
   @Test(timeout=1000)

@@ -187,9 +187,9 @@ public class TestFSAppAttempt extends FairSchedulerTestBase {
 
     final FSLeafQueue mockQueue = Mockito.mock(FSLeafQueue.class);
 
-    final Resource queueMaxResources = Resource.newInstance(5 * 1024, 3);
+    final Resource queueMaxResources = Resource.newInstance(5 * 1024, 3, 1000);
     final Resource queueFairShare = Resources.createResource(4096, 2);
-    final Resource queueUsage = Resource.newInstance(2048, 2);
+    final Resource queueUsage = Resource.newInstance(2048, 2, 1000);
 
     final Resource queueStarvation =
         Resources.subtract(queueFairShare, queueUsage);

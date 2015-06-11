@@ -2988,7 +2988,7 @@ public class TestCapacityScheduler {
 
     Resource amResource =
         Resource.newInstance(amResourceLimit.getMemory() + 1,
-            amResourceLimit.getVirtualCores() + 1);
+            amResourceLimit.getVirtualCores() + 1, 1);
 
     rm.submitApp(amResource.getMemory(), "app-1", userName, null, queueName);
 

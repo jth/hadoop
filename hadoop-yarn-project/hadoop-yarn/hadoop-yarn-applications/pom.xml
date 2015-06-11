@@ -37,7 +37,6 @@
   <modules>
     <module>hadoop-yarn-applications-distributedshell</module>
     <module>hadoop-yarn-applications-unmanaged-am-launcher</module>
-    <module>simple-yarn-app</module>
   </modules>
 
  <profiles>

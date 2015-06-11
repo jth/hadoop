@@ -78,7 +78,7 @@ public class RMAppAttemptBlock extends AppAttemptBlock{
         new AppInfo(rm, rm.getRMContext().getRMApps()
           .get(this.appAttemptId.getApplicationId()), true,
           WebAppUtils.getHttpSchemePrefix(conf));
-    TBODY<TABLE<Hamlet>> tbody =
+    Hamlet.TBODY<TABLE<Hamlet>> tbody =
         html.table("#ResourceRequests").thead().tr()
           .th(".priority", "Priority")
           .th(".resourceName", "ResourceName")
@@ -126,7 +126,7 @@ public class RMAppAttemptBlock extends AppAttemptBlock{
   }
 
   private Resource getTotalResource(List<ResourceRequest> requests) {
-    Resource totalResource = Resource.newInstance(0, 0);
+    Resource totalResource = Resource.newInstance(0, 0, 0);
     if (requests == null) {
       return totalResource;
     }

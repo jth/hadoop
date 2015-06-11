@@ -175,7 +175,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
     LOG.info("Nodemanager resources: vcores set to " + virtualCores + ".");
 
     // TODO: Isn't configurable at the moment
-    int virtualBandwidth = YarnConfiguration.DEFAULT_NM_BANDWIDTH;
+    int virtualBandwidth = 1024;
 
     this.totalResource = Resource.newInstance(memoryMb, virtualCores, virtualBandwidth);
     metrics.addResource(totalResource);

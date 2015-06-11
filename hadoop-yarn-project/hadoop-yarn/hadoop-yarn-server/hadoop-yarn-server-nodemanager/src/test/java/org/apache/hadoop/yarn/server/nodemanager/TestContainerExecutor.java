@@ -115,7 +115,7 @@ public class TestContainerExecutor {
 
     String[] command =
         containerExecutor.getRunCommand("echo", "group1", null, null, conf,
-          Resource.newInstance(1024, 1));
+          Resource.newInstance(1024, 1, 1));
     int nodeVCores = NodeManagerHardwareUtils.getVCores(conf);
     Assert.assertEquals(YarnConfiguration.DEFAULT_NM_VCORES, nodeVCores);
     int cpuRate = Math.min(10000, (containerCores * 10000) / nodeVCores);
@@ -135,7 +135,7 @@ public class TestContainerExecutor {
     Assert.assertEquals(nodeCPUs, nodeVCores);
     command =
         containerExecutor.getRunCommand("echo", "group1", null, null, conf,
-          Resource.newInstance(1024, 1));
+          Resource.newInstance(1024, 1, 1));
     cpuRate = Math.min(10000, (containerCores * 10000) / nodeVCores);
     expected[6] = String.valueOf(cpuRate);
     Assert.assertEquals(Arrays.toString(expected), Arrays.toString(command));
@@ -153,7 +153,7 @@ public class TestContainerExecutor {
     }
     command =
         containerExecutor.getRunCommand("echo", "group1", null, null, conf,
-          Resource.newInstance(1024, 1));
+          Resource.newInstance(1024, 1, 1));
     // we should get 100 * (1/nodeVcores) of 80% of CPU
     int containerPerc = (yarnCpuLimit * containerCores) / nodeVCores;
     cpuRate = Math.min(10000, 100 * containerPerc);

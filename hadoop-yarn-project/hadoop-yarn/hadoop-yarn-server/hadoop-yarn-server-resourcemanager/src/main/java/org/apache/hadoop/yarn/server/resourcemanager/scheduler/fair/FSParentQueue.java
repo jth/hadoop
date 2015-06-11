@@ -127,7 +127,7 @@ public class FSParentQueue extends FSQueue {
   public Resource getDemand() {
     readLock.lock();
     try {
-      return Resource.newInstance(demand.getMemory(), demand.getVirtualCores());
+      return Resource.newInstance(demand.getMemory(), demand.getVirtualCores(), demand.getBandwidth());
     } finally {
       readLock.unlock();
     }
