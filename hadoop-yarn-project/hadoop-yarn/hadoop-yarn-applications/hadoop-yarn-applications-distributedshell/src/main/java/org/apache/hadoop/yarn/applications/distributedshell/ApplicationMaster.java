@@ -264,15 +264,16 @@ public class ApplicationMaster {
     private final String linux_bash_command = "bash";
     private final String windows_command = "cmd /c";
 
-  // JTH
-  private final List<ContainerId> runningContainers = new ArrayList<>();
-  private final static double progressThreshold = 0.4;
-  private boolean progressAboveThreshhold = false;
-  private NodeId nodeId; // This most likely won't work on a cluster, but for single node operation this is fine.
+    // JTH
+    private final List<ContainerId> runningContainers = new ArrayList<>();
+    private final static double progressThreshold = 0.4;
+    private boolean progressAboveThreshhold = false;
+    private NodeId nodeId; // This most likely won't work on a cluster, but for single node operation this is fine.
+    private final Map<ContainerId, Container> containerMap = new HashMap<>(); // Don't know how to get a handle on container tokens otherweise
 
-  @VisibleForTesting
-  protected final Set<ContainerId> launchedContainers =
-      Collections.newSetFromMap(new ConcurrentHashMap<ContainerId, Boolean>());
+    @VisibleForTesting
+    protected final Set<ContainerId> launchedContainers =
+            Collections.newSetFromMap(new ConcurrentHashMap<ContainerId, Boolean>());
 
     /**
      * @param args Command line args
@@ -281,13 +282,13 @@ public class ApplicationMaster {
         boolean result = false;
         try {
             ApplicationMaster appMaster = new ApplicationMaster();
-      System.out.println("JTH: Initializing ApplicationMaster");
-      // Checks if application master is allowed to run, e.g. the arguments are valid
+            System.out.println("JTH: Initializing ApplicationMaster");
+            // Checks if application master is allowed to run, e.g. the arguments are valid
             boolean doRun = appMaster.init(args);
             if (!doRun) {
                 System.exit(0);
             }
-      // Important run method
+            // Important run method
             appMaster.run();
             result = appMaster.finish();
         } catch (Throwable t) {
@@ -296,10 +297,10 @@ public class ApplicationMaster {
             ExitUtil.terminate(1, t);
         }
         if (result) {
-      System.out.println("Application Master completed successfully. exiting");
+            System.out.println("Application Master completed successfully. exiting");
             System.exit(0);
         } else {
-      System.out.println("Application Master failed. exiting");
+            System.out.println("Application Master failed. exiting");
             System.exit(2);
         }
     }
@@ -309,10 +310,10 @@ public class ApplicationMaster {
      */
     private void dumpOutDebugInfo() {
 
-    System.out.println("Dump debug output");
+        System.out.println("Dump debug output");
         Map<String, String> envs = System.getenv();
         for (Map.Entry<String, String> env : envs.entrySet()) {
-      System.out.println("System env: key=" + env.getKey() + ", val=" + env.getValue());
+            System.out.println("System env: key=" + env.getKey() + ", val=" + env.getValue());
             System.out.println("System env: key=" + env.getKey() + ", val="
                     + env.getValue());
         }
@@ -324,7 +325,7 @@ public class ApplicationMaster {
             buf = new BufferedReader(new StringReader(lines));
             String line = "";
             while ((line = buf.readLine()) != null) {
-        System.out.println("System CWD content: " + line);
+                System.out.println("System CWD content: " + line);
                 System.out.println("System CWD content: " + line);
             }
         } catch (IOException e) {
@@ -423,7 +424,7 @@ public class ApplicationMaster {
                     + " not set in the environment");
         }
 
-    System.out.println("Application master for app" + ", appId="
+        System.out.println("Application master for app" + ", appId="
                 + appAttemptID.getApplicationId().getId() + ", clustertimestamp="
                 + appAttemptID.getApplicationId().getClusterTimestamp()
                 + ", attemptId=" + appAttemptID.getAttemptId());
@@ -517,20 +518,19 @@ public class ApplicationMaster {
      */
     @SuppressWarnings({"unchecked"})
     public void run() throws YarnException, IOException, InterruptedException {
-    System.out.println("Starting ApplicationMaster");
+        System.out.println("Starting ApplicationMaster");
 
         // Note: Credentials, Token, UserGroupInformation, DataOutputBuffer class
         // are marked as LimitedPrivate
-        Credentials credentials =
-                UserGroupInformation.getCurrentUser().getCredentials();
+        Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
         DataOutputBuffer dob = new DataOutputBuffer();
         credentials.writeTokenStorageToStream(dob);
         // Now remove the AM->RM token so that containers cannot access it.
         Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
-    System.out.println("Executing with tokens:");
+        System.out.println("Executing with tokens:");
         while (iter.hasNext()) {
             Token<?> token = iter.next();
-      System.out.println(token);
+            System.out.println(token);
             if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
                 iter.remove();
             }
@@ -545,13 +545,13 @@ public class ApplicationMaster {
         appSubmitterUgi.addCredentials(credentials);
 
 
-    // This is used to for ApplicationMaster <-> ResourceManager communication
+        // This is used to for ApplicationMaster <-> ResourceManager communication
         AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
         amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
         amRMClient.init(conf);
         amRMClient.start();
 
-    // This is for communication with the NodeManager
+        // This is for communication with the NodeManager
         containerListener = createNMCallbackHandler();
         nmClientAsync = new NMClientAsyncImpl(containerListener);
         nmClientAsync.init(conf);
@@ -578,21 +578,21 @@ public class ApplicationMaster {
         // Dump out information about cluster capability as seen by the
         // resource manager
         int maxMem = response.getMaximumResourceCapability().getMemory();
-    System.out.println("Max mem capability of resources in this cluster " + maxMem);
+        System.out.println("Max mem capability of resources in this cluster " + maxMem);
 
         int maxVCores = response.getMaximumResourceCapability().getVirtualCores();
-    System.out.println("Max vcores capability of resources in this cluster " + maxVCores);
+        System.out.println("Max vcores capability of resources in this cluster " + maxVCores);
 
         // A resource ask cannot exceed the max.
         if (containerMemory > maxMem) {
-      System.out.println("Container memory specified above max threshold of cluster."
+            System.out.println("Container memory specified above max threshold of cluster."
                     + " Using max value." + ", specified=" + containerMemory + ", max="
                     + maxMem);
             containerMemory = maxMem;
         }
 
         if (containerVirtualCores > maxVCores) {
-      System.out.println("Container virtual cores specified above max threshold of cluster."
+            System.out.println("Container virtual cores specified above max threshold of cluster."
                     + " Using max value." + ", specified=" + containerVirtualCores + ", max="
                     + maxVCores);
             containerVirtualCores = maxVCores;
@@ -600,16 +600,16 @@ public class ApplicationMaster {
 
         List<Container> previousAMRunningContainers =
                 response.getContainersFromPreviousAttempts();
-    System.out.println(appAttemptID + " received " + previousAMRunningContainers.size()
+        System.out.println(appAttemptID + " received " + previousAMRunningContainers.size()
                 + " previous attempts' running containers on AM registration.");
-    for(Container container: previousAMRunningContainers) {
-      launchedContainers.add(container.getId());
-    }
+        for(Container container: previousAMRunningContainers) {
+            launchedContainers.add(container.getId());
+        }
         numAllocatedContainers.addAndGet(previousAMRunningContainers.size());
 
 
-    // This is the juicy part where the container requests take place.
-    // The following line looks how many containers are already running
+        // This is the juicy part where the container requests take place.
+        // The following line looks how many containers are already running
         int numTotalContainersToRequest =
                 numTotalContainers - previousAMRunningContainers.size();
         // Setup ask for containers from RM
@@ -678,18 +678,18 @@ public class ApplicationMaster {
             try {
                 launchThread.join(10000);
             } catch (InterruptedException e) {
-        System.out.println("Exception thrown in thread join: " + e.getMessage());
+                System.out.println("Exception thrown in thread join: " + e.getMessage());
                 e.printStackTrace();
             }
         }
 
         // When the application completes, it should stop all running containers
-    System.out.println("Application completed. Stopping running containers");
+        System.out.println("Application completed. Stopping running containers");
         nmClientAsync.stop();
 
         // When the application completes, it should send a finish application
         // signal to the RM
-    System.out.println("Application completed. Signalling finish to RM");
+        System.out.println("Application completed. Signalling finish to RM");
 
         FinalApplicationStatus appStatus;
         String appMessage = null;
@@ -703,7 +703,7 @@ public class ApplicationMaster {
                     + ", completed=" + numCompletedContainers.get() + ", allocated="
                     + numAllocatedContainers.get() + ", failed="
                     + numFailedContainers.get();
-      System.out.println(appMessage);
+            System.out.println(appMessage);
             success = false;
         }
         try {
@@ -724,15 +724,15 @@ public class ApplicationMaster {
         return success;
     }
 
-  @VisibleForTesting
-  class RMCallbackHandler implements AMRMClientAsync.CallbackHandler {
+    @VisibleForTesting
+    class RMCallbackHandler implements AMRMClientAsync.CallbackHandler {
         @SuppressWarnings("unchecked")
         @Override
         public void onContainersCompleted(List<ContainerStatus> completedContainers) {
-      System.out.println("Got response from RM for container ask, completedCnt="
+            System.out.println("Got response from RM for container ask, completedCnt="
                     + completedContainers.size());
             for (ContainerStatus containerStatus : completedContainers) {
-        System.out.println(appAttemptID + " got container status for containerID="
+                System.out.println(appAttemptID + " got container status for containerID="
                         + containerStatus.getContainerId() + ", state="
                         + containerStatus.getState() + ", exitStatus="
                         + containerStatus.getExitStatus() + ", diagnostics="
@@ -740,14 +740,14 @@ public class ApplicationMaster {
 
                 // non complete containers should not be here
                 assert (containerStatus.getState() == ContainerState.COMPLETE);
-        // ignore containers we know nothing about - probably from a previous
-        // attempt
-        if (!launchedContainers.contains(containerStatus.getContainerId())) {
-          System.out.println("Ignoring completed status of "
-              + containerStatus.getContainerId()
-              + "; unknown container(probably launched by previous attempt)");
-          continue;
-        }
+                // ignore containers we know nothing about - probably from a previous
+                // attempt
+                if (!launchedContainers.contains(containerStatus.getContainerId())) {
+                    System.out.println("Ignoring completed status of "
+                            + containerStatus.getContainerId()
+                            + "; unknown container(probably launched by previous attempt)");
+                    continue;
+                }
 
                 // increment counters for completed/failed containers
                 int exitStatus = containerStatus.getExitStatus();
@@ -758,13 +758,13 @@ public class ApplicationMaster {
                         // counts as completed
                         numCompletedContainers.incrementAndGet();
                         numFailedContainers.incrementAndGet();
-            runningContainers.remove(containerStatus.getContainerId());
+                        runningContainers.remove(containerStatus.getContainerId());
                     } else {
                         // container was killed by framework, possibly preempted
                         // we should re-try as the container was lost for some reason
                         numAllocatedContainers.decrementAndGet();
                         numRequestedContainers.decrementAndGet();
-            runningContainers.remove(containerStatus.getContainerId());
+                        runningContainers.remove(containerStatus.getContainerId());
                         // we do not need to release the container as it would be done
                         // by the RM
                     }
@@ -772,9 +772,9 @@ public class ApplicationMaster {
                     // nothing to do
                     // container completed successfully
                     numCompletedContainers.incrementAndGet();
-          System.out.println("Container completed successfully." + ", containerId="
+                    System.out.println("Container completed successfully." + ", containerId="
                             + containerStatus.getContainerId());
-          runningContainers.remove(containerStatus.getContainerId());
+                    runningContainers.remove(containerStatus.getContainerId());
                 }
                 if (timelineClient != null) {
                     publishContainerEndEvent(
@@ -782,6 +782,7 @@ public class ApplicationMaster {
                 }
             }
 
+            // JTH: nah, don't do that.
             // ask for more containers if any failed
             int askCount = numTotalContainers - numRequestedContainers.get();
             numRequestedContainers.addAndGet(askCount);
@@ -800,11 +801,11 @@ public class ApplicationMaster {
 
         @Override
         public void onContainersAllocated(List<Container> allocatedContainers) {
-      System.out.println("Got response from RM for container ask, allocatedCnt="
+            System.out.println("Got response from RM for container ask, allocatedCnt="
                     + allocatedContainers.size());
             numAllocatedContainers.addAndGet(allocatedContainers.size());
             for (Container allocatedContainer : allocatedContainers) {
-        System.out.println("Launching shell command on a new container."
+                System.out.println("Launching shell command on a new container."
                         + ", containerId=" + allocatedContainer.getId()
                         + ", containerNode=" + allocatedContainer.getNodeId().getHost()
                         + ":" + allocatedContainer.getNodeId().getPort()
@@ -816,16 +817,20 @@ public class ApplicationMaster {
                 // + ", containerToken"
                 // +allocatedContainer.getContainerToken().getIdentifier().toString());
 
-        // TODO: use a map here, <ContainerID, NodeID>
-        nodeId = allocatedContainer.getNodeId();
-        Thread launchThread = createLaunchContainerThread(allocatedContainer);
+                // TODO: use a map here, <ContainerID, NodeID>
+                nodeId = allocatedContainer.getNodeId();
+                Thread launchThread = createLaunchContainerThread(allocatedContainer);
 
+                // JTH: Don't know if this works in a real distributed environment, though
+                // TODO: Clean that up on container release
+                System.out.println("Adding container " + allocatedContainer.getId() + " to Container Hashmap");
+                containerMap.put(allocatedContainer.getId(), allocatedContainer);
                 // launch and start the container on a separate thread to keep
                 // the main thread unblocked
                 // as all containers may not be allocated at one go.
                 launchThreads.add(launchThread);
-        launchedContainers.add(allocatedContainer.getId());
-        runningContainers.add(allocatedContainer.getId());
+                launchedContainers.add(allocatedContainer.getId());
+                runningContainers.add(allocatedContainer.getId());
                 launchThread.start();
             }
         }
@@ -839,64 +844,70 @@ public class ApplicationMaster {
         public void onNodesUpdated(List<NodeReport> updatedNodes) {
         }
 
-    // Hook in here to get the progress.
+        // Hook in here to get the progress.
         @Override
         public float getProgress() {
             // set progress to deliver to RM on next heartbeat
             float progress = (float) numCompletedContainers.get()
                     / numTotalContainers;
-      // TODO: This progress only works in terms of completed containers.
-      for (ContainerId containerId : launchedContainers) {
-        System.out.println("JTH: Launched containers: " + containerId.toString());
-      }
-      for (ContainerId containerId : runningContainers) {
-        System.out.println("JTH: Still running containers: " + containerId.toString());
-      }
+            // TODO: This progress only works in terms of completed containers.
+            for (ContainerId containerId : launchedContainers) {
+                System.out.println("JTH: Launched containers: " + containerId.toString());
+            }
+            for (ContainerId containerId : runningContainers) {
+                System.out.println("JTH: Still running containers: " + containerId.toString());
+            }
 
-      // JTH: Kill one running container and request a new one
-      if (progressAboveThreshhold == false && progress >= progressThreshold) {
-        System.out.println("JTH: Progress at or above threshold " + progressThreshold + ". Requesting new container from RM");
-        System.out.println("JTH: Progress at or above threshold " + progressThreshold + ". Stopping a container");
-        if (runningContainers.isEmpty() == false) {
-          System.out.println("Releasing running container " + runningContainers.get(0).toString());
-          //amRMClient.releaseAssignedContainer(runningContainers.get(0));
-          try {
-            // Find some better way to get the NodeId
-            stopContainer(runningContainers.get(0), nodeId);
-            System.out.println("Stopping container " + runningContainers.get(0) + " on Node " + nodeId.toString());
-          } catch (YarnException | IOException e) {
-            throw new RuntimeException("Couldn't stop container " + runningContainers.get(0).toString() + ". Reason: " + e.getMessage());
-          }
-          // JTH: Not necessary, done by the NM Callback
-          //numAllocatedContainers.decrementAndGet();
-          //numTotalContainers--;
-        }
-        progressAboveThreshhold = true;
-        //askForNewContainer();
-        // Try to release a running container.
-      }
+            // JTH: Kill one running container and request a new one
+            if (progressAboveThreshhold == false && progress >= progressThreshold) {
+                System.out.println("JTH: Progress at or above threshold " + progressThreshold + ". Requesting new container from RM");
+                System.out.println("JTH: Progress at or above threshold " + progressThreshold + ". Stopping a container");
+                if (runningContainers.isEmpty() == false) {
+                    System.out.println("Releasing running container " + runningContainers.get(0).toString());
+                    //amRMClient.releaseAssignedContainer(runningContainers.get(0));
+                    /*
+                    try {
+                        // Find some better way to get the NodeId
+                        stopContainer(runningContainers.get(0), nodeId);
+                        System.out.println("Stopping container " + runningContainers.get(0) + " on Node " + nodeId.toString());
+                    } catch (YarnException | IOException e) {
+                        throw new RuntimeException("Couldn't stop container " + runningContainers.get(0).toString() + ". Reason: " + e.getMessage());
+                    }
+                    */
+                    final Resource res = Resource.newInstance(1024, 1, 2000);
+                    //final org.apache.hadoop.yarn.api.records.Token containerToken = containerMap.get(runningContainers.get(0)).getContainerToken();
+                    //ContainerResourceIncrease incr = ContainerResourceIncrease.newInstance(runningContainers.get(0), res, containerToken);
+                    ContainerResourceIncreaseRequest req = ContainerResourceIncreaseRequest.newInstance(runningContainers.get(0), res);
+                    amRMClient.increaseContainerResourceRequest(req);
+                    // JTH: Not necessary, done by the NM Callback
+                    //numAllocatedContainers.decrementAndGet();
+                    //numTotalContainers--;
+                }
+                progressAboveThreshhold = true;
+                //askForNewContainer();
+                // Try to release a running container.
+            }
 
-      System.out.println("JTH: Progress (based on completed containers): " + progress);
+            System.out.println("JTH: Progress (based on completed containers): " + progress);
             return progress;
         }
 
-    private void stopContainer(ContainerId containerId, NodeId nodeId) throws IOException, YarnException {
-      nmClientAsync.getClient().stopContainer(containerId, nodeId);
-      System.out.println("Container stop request finished");
-      runningContainers.remove(runningContainers.get(0));
-      //numRequestedContainers.decrementAndGet();
-      numCompletedContainers.incrementAndGet();
-      //numTotalContainers--;
+        private void stopContainer(ContainerId containerId, NodeId nodeId) throws IOException, YarnException {
+            nmClientAsync.getClient().stopContainer(containerId, nodeId);
+            System.out.println("Container stop request finished");
+            runningContainers.remove(runningContainers.get(0));
+            //numRequestedContainers.decrementAndGet();
+            numCompletedContainers.incrementAndGet();
+            //numTotalContainers--;
+        }
 
-    }
-
-    private void askForNewContainer() {
-      ContainerRequest containerAsk = setupContainerAskForRM();
-      amRMClient.addContainerRequest(containerAsk);
-      numTotalContainers++;
-      numRequestedContainers.addAndGet(1);
-      System.out.println("JTH: Container request done");
-    }
+        private void askForNewContainer() {
+            ContainerRequest containerAsk = setupContainerAskForRM();
+            amRMClient.addContainerRequest(containerAsk);
+            numTotalContainers++;
+            numRequestedContainers.addAndGet(1);
+            System.out.println("JTH: Container request done");
+        }
 
         @Override
         public void onError(Throwable e) {
@@ -924,7 +935,7 @@ public class ApplicationMaster {
         @Override
         public void onContainerStopped(ContainerId containerId) {
             if (LOG.isDebugEnabled()) {
-        System.out.println("Succeeded to stop Container " + containerId);
+                System.out.println("Succeeded to stop Container " + containerId);
             }
             containers.remove(containerId);
         }
@@ -933,7 +944,7 @@ public class ApplicationMaster {
         public void onContainerStatusReceived(ContainerId containerId,
                                               ContainerStatus containerStatus) {
             if (LOG.isDebugEnabled()) {
-        System.out.println("Container Status: id=" + containerId + ", status=" +
+                System.out.println("Container Status: id=" + containerId + ", status=" +
                         containerStatus);
             }
         }
@@ -942,7 +953,7 @@ public class ApplicationMaster {
         public void onContainerStarted(ContainerId containerId,
                                        Map<String, ByteBuffer> allServiceResponse) {
             if (LOG.isDebugEnabled()) {
-        System.out.println("Succeeded to start Container " + containerId);
+                System.out.println("Succeeded to start Container " + containerId);
             }
             Container container = containers.get(containerId);
             if (container != null) {
@@ -1004,7 +1015,7 @@ public class ApplicationMaster {
          * start request to the CM.
          */
         public void run() {
-      System.out.println("Setting up container launch container for containerid="
+            System.out.println("Setting up container launch container for containerid="
                     + container.getId());
 
             // Set the local resources
@@ -1111,7 +1122,7 @@ public class ApplicationMaster {
                 return null;
             }
         });
-    System.out.println("User " + appSubmitterUgi.getUserName()
+        System.out.println("User " + appSubmitterUgi.getUserName()
                 + " added suffix(.sh/.bat) to script file as " + renamedScriptPath);
     }
 
@@ -1134,7 +1145,7 @@ public class ApplicationMaster {
 
         ContainerRequest request = new ContainerRequest(capability, null, null,
                 pri);
-    System.out.println("Requested container ask: " + request.toString());
+        System.out.println("Requested container ask: " + request.toString());
         //LOG.info("Requested container ask: " + request.toString());
         return request;
     }
@@ -1224,31 +1235,31 @@ public class ApplicationMaster {
                     + " event could not be published for "
                     + appAttemptId.toString(), e);
         }
-  }
+    }
 
-  RMCallbackHandler getRMCallbackHandler() {
-    return new RMCallbackHandler();
-  }
+    RMCallbackHandler getRMCallbackHandler() {
+        return new RMCallbackHandler();
+    }
 
-  @VisibleForTesting
-  void setAmRMClient(AMRMClientAsync client) {
-    this.amRMClient = client;
-  }
+    @VisibleForTesting
+    void setAmRMClient(AMRMClientAsync client) {
+        this.amRMClient = client;
+    }
 
-  @VisibleForTesting
-  int getNumCompletedContainers() {
-    return numCompletedContainers.get();
-  }
+    @VisibleForTesting
+    int getNumCompletedContainers() {
+        return numCompletedContainers.get();
+    }
 
-  @VisibleForTesting
-  boolean getDone() {
-    return done;
-  }
+    @VisibleForTesting
+    boolean getDone() {
+        return done;
+    }
 
-  @VisibleForTesting
-  Thread createLaunchContainerThread(Container allocatedContainer) {
-    LaunchContainerRunnable runnableLaunchContainer =
-        new LaunchContainerRunnable(allocatedContainer, containerListener);
-    return new Thread(runnableLaunchContainer);
+    @VisibleForTesting
+    Thread createLaunchContainerThread(Container allocatedContainer) {
+        LaunchContainerRunnable runnableLaunchContainer =
+                new LaunchContainerRunnable(allocatedContainer, containerListener);
+        return new Thread(runnableLaunchContainer);
     }
 }

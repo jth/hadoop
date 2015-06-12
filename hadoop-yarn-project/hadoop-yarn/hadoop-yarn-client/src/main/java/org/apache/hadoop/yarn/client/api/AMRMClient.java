@@ -31,10 +31,7 @@ import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.api.impl.AMRMClientImpl;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
@@ -100,11 +97,11 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
    * All getters return immutable values.
    */
   public static class ContainerRequest {
-    final Resource capability;
     final List<String> nodes;
     final List<String> racks;
     final Priority priority;
     final boolean relaxLocality;
+    final Resource capability;
     final String nodeLabelsExpression;
     
     /**
@@ -187,25 +184,18 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
                   && (nodes == null || nodes.length == 0)),
               "Can't turn off locality relaxation on a " + 
               "request with no location constraints");
-      // JTH: Try to change capability on the fly
-      System.out.println("JTH: Changing the capabilities of the ContainerRequest");
       this.capability = capability;
-      this.capability.setMemory(128);
-      this.capability.setBandwidth(1024);
-      this.capability.setVirtualCores(1);
-      System.out.println("JTH: Finished changeing capabilities of Container");
-      // Done
       this.nodes = (nodes != null ? ImmutableList.copyOf(nodes) : null);
       this.racks = (racks != null ? ImmutableList.copyOf(racks) : null);
       this.priority = priority;
       this.relaxLocality = relaxLocality;
       this.nodeLabelsExpression = nodeLabelsExpression;
     }
-    
+
     public Resource getCapability() {
       return capability;
     }
-    
+
     public List<String> getNodes() {
       return nodes;
     }
@@ -228,7 +218,6 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
     
     public String toString() {
       StringBuilder sb = new StringBuilder();
-      sb.append("Capability[").append(capability).append("]");
       sb.append("Priority[").append(priority).append("]");
       return sb.toString();
     }
@@ -293,7 +282,9 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
    * @param req Resource request
    */
   public abstract void addContainerRequest(T req);
-  
+
+  public abstract void increaseContainerResourcesRequest(T req);
+
   /**
    * Remove previous container request. The previous container request may have 
    * already been sent to the ResourceManager. So even after the remove request 

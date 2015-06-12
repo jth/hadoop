@@ -49,15 +49,7 @@ import org.apache.hadoop.yarn.api.protocolrecords.FinishApplicationMasterRequest
 import org.apache.hadoop.yarn.api.protocolrecords.FinishApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
-import org.apache.hadoop.yarn.api.records.NMToken;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.ResourceBlacklistRequest;
-import org.apache.hadoop.yarn.api.records.ResourceRequest;
-import org.apache.hadoop.yarn.api.records.Token;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.ClientRMProxy;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
@@ -393,7 +385,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       unregisterApplicationMaster(appStatus, appMessage, appTrackingUrl);
     }
   }
-  
+
   @Override
   public synchronized void addContainerRequest(T req) {
     Preconditions.checkArgument(req != null,
@@ -452,6 +444,12 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     // Off-switch
     addResourceRequest(req.getPriority(), ResourceRequest.ANY, 
         req.getCapability(), req, req.getRelaxLocality(), req.getNodeLabelExpression());
+  }
+
+  @Override
+  public void increaseContainerResourcesRequest(T req) {
+    addResourceRequest(req.getPriority(), ResourceRequest.ANY, req.getCapability(), req, false, req.getNodeLabelExpression());
+    //ask.add()
   }
 
   @Override
@@ -619,7 +617,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
           "Cannot specify node label with rack and node");
     }
   }
-  
+
+  // TODO: Here is somewhat more work to do....
   private void addResourceRequestToAsk(ResourceRequest remoteRequest) {
     // This code looks weird but is needed because of the following scenario.
     // A ResourceRequest is removed from the remoteRequestTable. A 0 container 
@@ -634,6 +633,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     if(ask.contains(remoteRequest)) {
       ask.remove(remoteRequest);
     }
+    LOG.info("Final point in communication with RM? Is tis implicitly worked by yarn?");
     ask.add(remoteRequest);
   }
 
@@ -641,15 +641,14 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       addResourceRequest(Priority priority, String resourceName,
           Resource capability, T req, boolean relaxLocality,
           String labelExpression) {
+    LOG.info("JTH: addResourceRequest resourceName: " + resourceName);
     Map<String, TreeMap<Resource, ResourceRequestInfo>> remoteRequests =
       this.remoteRequestsTable.get(priority);
     if (remoteRequests == null) {
       remoteRequests = 
           new HashMap<String, TreeMap<Resource, ResourceRequestInfo>>();
       this.remoteRequestsTable.put(priority, remoteRequests);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Added priority=" + priority);
-      }
+        LOG.info("Added priority=" + priority);
     }
     TreeMap<Resource, ResourceRequestInfo> reqMap = 
                                           remoteRequests.get(resourceName);
@@ -682,7 +681,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     addResourceRequestToAsk(resourceRequestInfo.remoteRequest);
 
     if (LOG.isDebugEnabled()) {
-      LOG.debug("addResourceRequest:" + " applicationId="
+      LOG.info("addResourceRequest:" + " applicationId="
           + " priority=" + priority.getPriority()
           + " resourceName=" + resourceName + " numContainers="
           + resourceRequestInfo.remoteRequest.getNumContainers() 
@@ -690,6 +689,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     }
   }
 
+  // JTH not called. Mh.
   private void decResourceRequest(Priority priority, 
                                    String resourceName,
                                    Resource capability, 
@@ -698,30 +698,25 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       this.remoteRequestsTable.get(priority);
     
     if(remoteRequests == null) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Not decrementing resource as priority " + priority 
+        LOG.info("Not decrementing resource as priority " + priority
             + " is not present in request table");
-      }
       return;
     }
-    
+
+    LOG.info("JTH: ResourceName: " + resourceName);
     Map<Resource, ResourceRequestInfo> reqMap = remoteRequests.get(resourceName);
     if (reqMap == null) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Not decrementing resource as " + resourceName
+        LOG.info("Not decrementing resource as " + resourceName
             + " is not present in request table");
-      }
       return;
     }
     ResourceRequestInfo resourceRequestInfo = reqMap.get(capability);
 
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("BEFORE decResourceRequest:" + " applicationId="
+      LOG.info("BEFORE decResourceRequest:" + " applicationId="
           + " priority=" + priority.getPriority()
           + " resourceName=" + resourceName + " numContainers="
           + resourceRequestInfo.remoteRequest.getNumContainers() 
           + " #asks=" + ask.size());
-    }
 
     resourceRequestInfo.remoteRequest.setNumContainers(
         resourceRequestInfo.remoteRequest.getNumContainers() - 1);
@@ -748,13 +743,11 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       }
     }
 
-    if (LOG.isDebugEnabled()) {
       LOG.info("AFTER decResourceRequest:" + " applicationId="
           + " priority=" + priority.getPriority()
           + " resourceName=" + resourceName + " numContainers="
           + resourceRequestInfo.remoteRequest.getNumContainers() 
           + " #asks=" + ask.size());
-    }
   }
 
   @Override

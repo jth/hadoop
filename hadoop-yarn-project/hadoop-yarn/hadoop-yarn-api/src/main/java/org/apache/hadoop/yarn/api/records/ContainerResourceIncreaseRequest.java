@@ -26,7 +26,7 @@ import org.apache.hadoop.yarn.util.Records;
  * Resource Manager
  */
 @Public
-public abstract class ContainerResourceIncreaseRequest {
+public abstract class ContainerResourceIncreaseRequest  {
   @Public
   public static ContainerResourceIncreaseRequest newInstance(
       ContainerId existingContainerId, Resource targetCapability) {

@@ -89,6 +89,12 @@ public abstract class ResourceRequest implements Comparable<ResourceRequest> {
     return request;
   }
 
+  // JTH: This is for setting new capabilities for a container
+  public static ResourceRequest newInstance(Priority priority, String hostName,
+                                            Resource capability, ContainerId containerId) {
+    return newInstance(priority, hostName, capability, containerId);
+  }
+
   @Public
   @Stable
   public static class ResourceRequestComparator implements
