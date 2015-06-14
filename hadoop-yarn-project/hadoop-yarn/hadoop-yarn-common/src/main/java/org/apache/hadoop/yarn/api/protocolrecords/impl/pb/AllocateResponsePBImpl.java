@@ -60,6 +60,7 @@ import org.apache.hadoop.yarn.proto.YarnServiceProtos.NMTokenProto;
 
 import com.google.protobuf.TextFormat;
 
+// TODO JTH: This should be the place where to put the resource increase request
 @Private
 @Unstable
 public class AllocateResponsePBImpl extends AllocateResponse {

@@ -48,6 +48,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
  */
 @Public
 @Stable
+// TODO: JTH this is the actual protocol
 public interface ApplicationMasterProtocol {
 
   /**
@@ -111,6 +112,7 @@ public interface ApplicationMasterProtocol {
       FinishApplicationMasterRequest request) 
   throws YarnException, IOException;
 
+  // TODO: Jackpot. Fit the ResourceIncreaseRequest somewhere into here.
   /**
    * <p>
    * The main interface between an <code>ApplicationMaster</code> and the
