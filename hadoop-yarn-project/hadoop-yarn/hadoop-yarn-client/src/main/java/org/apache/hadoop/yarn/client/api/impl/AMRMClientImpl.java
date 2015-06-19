@@ -155,6 +155,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
   protected final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(
       new org.apache.hadoop.yarn.api.records.ResourceRequest.ResourceRequestComparator());
+  protected final Set<ContainerResourceIncreaseRequest> resourceIncreaseAsk = new TreeSet<ContainerResourceIncreaseRequest>();
   protected final Set<ContainerId> release = new TreeSet<ContainerId>();
   // pendingRelease holds history or release requests.request is removed only if
   // RM sends completedContainer.
@@ -222,18 +223,49 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     return response;
   }
 
+  // TODO: JTH: Test for submitting ContainerResourceIncrease
+//  public AllocateResponse allocateIncrease() {
+//    AllocateRequest increaseRequest = AllocateRequest.newInstance()
+//  }
+
+  private AllocateResponse allocateContainerResourceIncrease() {
+    LOG.info("JTH: allocateContainerResourceIncrease()");
+
+    // TODO: Generate new ResourceRequest
+    ResourceRequest resourceRequest = ResourceRequest.newInstance();
+/*
+    public static AllocateRequest newInstance(int responseID, float appProgress,
+    List<ResourceRequest> resourceAsk,
+    List<ContainerId> containersToBeReleased,
+    ResourceBlacklistRequest resourceBlacklistRequest,
+    List<ContainerResourceIncreaseRequest> increaseRequests) {
+    AllocateRequest.newInstance()
+*/
+    resourceIncreaseAsk.clear();
+
+    return rmClient.allocate(allocateRequest);
+  }
+
   @Override
   public AllocateResponse allocate(float progressIndicator) 
       throws YarnException, IOException {
     Preconditions.checkArgument(progressIndicator >= 0,
-        "Progress indicator should not be negative");
+            "Progress indicator should not be negative");
     AllocateResponse allocateResponse = null;
     List<ResourceRequest> askList = null;
     List<ContainerId> releaseList = null;
     AllocateRequest allocateRequest = null;
     List<String> blacklistToAdd = new ArrayList<String>();
     List<String> blacklistToRemove = new ArrayList<String>();
-    
+
+    if (resourceIncreaseAsk.isEmpty() == false) {
+      LOG.info("JTH: allocate(), resourceIncreaseAsk not empty. Calling allocateContainerResourceIncrease()");
+      return allocateContainerResourceIncrease();
+    } else {
+      LOG.info("JTH: allocate(), resourceIncreaseAsk is empty");
+    }
+
+    // JTH: AllocateRequest is the important thing
     try {
       synchronized (this) {
         askList = new ArrayList<ResourceRequest>(ask.size());
@@ -244,6 +276,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
               r.getResourceName(), r.getCapability(), r.getNumContainers(),
               r.getRelaxLocality(), r.getNodeLabelExpression()));
         }
+
         releaseList = new ArrayList<ContainerId>(release);
         // optimistically clear this collection assuming no RPC failure
         ask.clear();
@@ -266,6 +299,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       }
 
       try {
+        // TODO: rmClient.alloate(): Network communication? -> yes
+        LOG.info("JTH: Forwarding allocateRequest to RM: " + allocateRequest.toString());
         allocateResponse = rmClient.allocate(allocateRequest);
       } catch (ApplicationMasterNotRegisteredException e) {
         LOG.warn("ApplicationMaster is out of sync with ResourceManager,"
@@ -399,6 +434,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
             + joiner.join(req.getRacks()));
       }
     }
+
+
     Set<String> inferredRacks = resolveRacks(req.getNodes());
     inferredRacks.removeAll(dedupedRacks);
 
@@ -425,31 +462,30 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       }
       for (String node : dedupedNodes) {
         addResourceRequest(req.getPriority(), node, req.getCapability(), req,
-            true, req.getNodeLabelExpression());
+            true, req.getNodeLabelExpression(), null);
       }
     }
 
     for (String rack : dedupedRacks) {
       addResourceRequest(req.getPriority(), rack, req.getCapability(), req,
-          true, req.getNodeLabelExpression());
+          true, req.getNodeLabelExpression(), null);
     }
 
     // Ensure node requests are accompanied by requests for
     // corresponding rack
     for (String rack : inferredRacks) {
       addResourceRequest(req.getPriority(), rack, req.getCapability(), req,
-          req.getRelaxLocality(), req.getNodeLabelExpression());
+          req.getRelaxLocality(), req.getNodeLabelExpression(), null);
     }
 
     // Off-switch
     addResourceRequest(req.getPriority(), ResourceRequest.ANY, 
-        req.getCapability(), req, req.getRelaxLocality(), req.getNodeLabelExpression());
+        req.getCapability(), req, req.getRelaxLocality(), req.getNodeLabelExpression(), null);
   }
 
-  @Override
-  public void increaseContainerResourcesRequest(T req) {
-    addResourceRequest(req.getPriority(), ResourceRequest.ANY, req.getCapability(), req, false, req.getNodeLabelExpression());
-    //ask.add()
+  public synchronized void increaseContainerResourcesRequest(ContainerId containerId, Resource capabilty) {
+    System.out.println("JTH: increaseContainerResourceRequest");
+    addResourceIncreaseRequestToAsk(containerId, capabilty);
   }
 
   @Override
@@ -618,6 +654,12 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     }
   }
 
+  private void addResourceIncreaseRequestToAsk(ContainerId containerId, Resource capabilty) {
+    System.out.println("JTH: Adding resource request for container: " + containerId);
+    resourceIncreaseAsk.add(ContainerResourceIncreaseRequest.newInstance(containerId, capabilty));
+    System.out.println("JTH: addResourceIncreaseReuqestToAsk() len: " + resourceIncreaseAsk.size());
+  }
+
   // TODO: Here is somewhat more work to do....
   private void addResourceRequestToAsk(ResourceRequest remoteRequest) {
     // This code looks weird but is needed because of the following scenario.
@@ -633,6 +675,11 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     if(ask.contains(remoteRequest)) {
       ask.remove(remoteRequest);
     }
+
+//    Resource res = Resource.newInstance(1024, 2, 10000);
+//    ResourceRequest req = ResourceRequest.newInstance(remoteRequest.getPriority(), ResourceRequest.ANY, res, req.)
+
+    LOG.info("remoteRequest.class: " + remoteRequest.getClass().toString());
     LOG.info("Final point in communication with RM? Is tis implicitly worked by yarn?");
     ask.add(remoteRequest);
   }
@@ -640,8 +687,15 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   private void
       addResourceRequest(Priority priority, String resourceName,
           Resource capability, T req, boolean relaxLocality,
-          String labelExpression) {
+          String labelExpression, ContainerId containerId) {
     LOG.info("JTH: addResourceRequest resourceName: " + resourceName);
+
+    if (containerId != null) {
+      LOG.info("JTH: This is a containerResourceIncrease request");
+    } else {
+      LOG.info("JTH: This is *NOT* a containerResourceIncrease request");
+    }
+
     Map<String, TreeMap<Resource, ResourceRequestInfo>> remoteRequests =
       this.remoteRequestsTable.get(priority);
     if (remoteRequests == null) {
@@ -678,7 +732,11 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     }
 
     // Note this down for next interaction with ResourceManager
-    addResourceRequestToAsk(resourceRequestInfo.remoteRequest);
+    if (containerId == null) {
+      addResourceRequestToAsk(resourceRequestInfo.remoteRequest);
+    } else {
+      addResourceIncreaseRequestToAsk(containerId, capability);
+    }
 
     if (LOG.isDebugEnabled()) {
       LOG.info("addResourceRequest:" + " applicationId="

@@ -160,7 +160,7 @@ extends AbstractService {
    * JTH: Interface for requesting an runtime resource change to the Resource Manager
    */
 
-  public abstract void increaseContainerResourceRequest(T req);
+  public abstract void increaseContainerResourceRequest(ContainerId containerId, Resource capabilty);
 
   /**
    * Remove previous container request. The previous container request may have 

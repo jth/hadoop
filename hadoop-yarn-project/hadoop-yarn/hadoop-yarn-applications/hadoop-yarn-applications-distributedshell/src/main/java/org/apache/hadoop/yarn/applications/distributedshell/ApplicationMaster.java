@@ -72,6 +72,7 @@ import org.apache.hadoop.yarn.api.protocolrecords.FinishApplicationMasterRequest
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.StartContainerRequest;
 import org.apache.hadoop.yarn.api.records.*;
+import org.apache.hadoop.yarn.api.records.impl.pb.ContainerResourceIncreaseRequestPBImpl;
 import org.apache.hadoop.yarn.api.records.timeline.TimelineEntity;
 import org.apache.hadoop.yarn.api.records.timeline.TimelineEvent;
 import org.apache.hadoop.yarn.api.records.timeline.TimelinePutResponse;
@@ -875,10 +876,15 @@ public class ApplicationMaster {
                     }
                     */
                     final Resource res = Resource.newInstance(1024, 1, 2000);
+                    ContainerRequest req = new ContainerRequest(res, null, null, Priority.newInstance(requestPriority));
+                    //ContainerResourceIncreaseRequest req = ContainerResourceIncreaseRequest.newInstance(runningContainers.get(0), res);
+                    System.out.println("Increasing Container Resource Request for container " + runningContainers.get(0).toString());
+                    amRMClient.increaseContainerResourceRequest(runningContainers.get(0), res);
+                    //amRMClient.increaseContainerResourceRequest(req);
                     //final org.apache.hadoop.yarn.api.records.Token containerToken = containerMap.get(runningContainers.get(0)).getContainerToken();
                     //ContainerResourceIncrease incr = ContainerResourceIncrease.newInstance(runningContainers.get(0), res, containerToken);
-                    ContainerResourceIncreaseRequest req = ContainerResourceIncreaseRequest.newInstance(runningContainers.get(0), res);
-                    amRMClient.increaseContainerResourceRequest(req);
+//                    ContainerResourceIncreaseRequest req = ContainerResourceIncreaseRequest.newInstance(runningContainers.get(0), res);
+//                    amRMClient.increaseContainerResourceRequest(req);
                     // JTH: Not necessary, done by the NM Callback
                     //numAllocatedContainers.decrementAndGet();
                     //numTotalContainers--;
@@ -1148,6 +1154,12 @@ public class ApplicationMaster {
         System.out.println("Requested container ask: " + request.toString());
         //LOG.info("Requested container ask: " + request.toString());
         return request;
+    }
+
+    private ContainerResourceIncreaseRequest setupContainerResourceIncreaseRequest(ContainerId containerId, Resource resource) {
+        ContainerResourceIncreaseRequest increaseRequest = ContainerResourceIncreaseRequest.newInstance(containerId, resource);
+
+        return increaseRequest;
     }
 
     private boolean fileExist(String filePath) {

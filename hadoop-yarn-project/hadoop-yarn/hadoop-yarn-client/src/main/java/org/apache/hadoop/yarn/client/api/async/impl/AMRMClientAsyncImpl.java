@@ -161,10 +161,16 @@ extends AMRMClientAsync<T> {
   }
 
   @Override
-  public void increaseContainerResourceRequest(T req) {
-    LOG.info("JTH: increaseContainerResourceRequest()");
-    client.increaseContainerResourcesRequest(req);
+  public void increaseContainerResourceRequest(ContainerId containerId, Resource capabilty) {
+    LOG.info("JTH: increaseContainerResourceRequest() for containerID " + containerId);
+    client.increaseContainerResourcesRequest(containerId, capabilty);
   }
+
+//  @Override
+//  public void increaseContainerResourceRequest(T req) {
+//    LOG.info("JTH: increaseContainerResourceRequest()");
+//    client.increaseContainerResourcesRequest(req);
+//  }
 
   /**
    * Remove previous container request. The previous container request may have 

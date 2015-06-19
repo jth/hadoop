@@ -28,7 +28,7 @@ import org.apache.hadoop.yarn.proto.YarnProtos.ResourceProto;
 
 
 public class ContainerResourceIncreaseRequestPBImpl extends
-    ContainerResourceIncreaseRequest {
+    ContainerResourceIncreaseRequest implements Comparable {
   ContainerResourceIncreaseRequestProto proto = 
       ContainerResourceIncreaseRequestProto.getDefaultInstance();
   ContainerResourceIncreaseRequestProto.Builder builder = null;
@@ -138,4 +138,17 @@ public class ContainerResourceIncreaseRequestPBImpl extends
       builder.setCapability(convertToProtoFormat(this.targetCapability));
     }
   }
+
+  @Override
+  public int compareTo(Object o) {
+    ContainerResourceIncreaseRequest other = (ContainerResourceIncreaseRequest)o;
+
+    if (this.getContainerId().getContainerId() < other.getContainerId().getContainerId()) {
+      return -1;
+    } else if (this.getContainerId().getContainerId() > other.getContainerId().getContainerId()) {
+      return 1;
+    }
+    return 0;
+  }
+
 }

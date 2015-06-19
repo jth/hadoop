@@ -283,7 +283,7 @@ public abstract class AMRMClient<T extends AMRMClient.ContainerRequest> extends
    */
   public abstract void addContainerRequest(T req);
 
-  public abstract void increaseContainerResourcesRequest(T req);
+  public abstract void increaseContainerResourcesRequest(ContainerId containerId, Resource capabilty);
 
   /**
    * Remove previous container request. The previous container request may have 

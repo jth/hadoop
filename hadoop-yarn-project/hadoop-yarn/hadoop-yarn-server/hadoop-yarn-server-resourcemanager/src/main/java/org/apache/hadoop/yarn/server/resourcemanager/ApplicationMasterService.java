@@ -430,9 +430,10 @@ public class ApplicationMasterService extends AbstractService implements
   @Override
   public AllocateResponse allocate(AllocateRequest request)
       throws YarnException, IOException {
-
+    LOG.info("JTH allocate()");
     AMRMTokenIdentifier amrmTokenIdentifier = authorizeRequest();
 
+    LOG.info("JTH: increaseRequestsSize: " + request.getIncreaseRequests().size());
     ApplicationAttemptId appAttemptId =
         amrmTokenIdentifier.getApplicationAttemptId();
     ApplicationId applicationId = appAttemptId.getApplicationId();
@@ -539,6 +540,7 @@ public class ApplicationMasterService extends AbstractService implements
         }
       }
 
+        // TODO: Actual sending here?
       // Send new requests to appAttempt.
       Allocation allocation;
       RMAppAttemptState state =

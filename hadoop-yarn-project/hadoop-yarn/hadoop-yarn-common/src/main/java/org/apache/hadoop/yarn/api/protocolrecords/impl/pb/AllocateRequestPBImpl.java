@@ -43,6 +43,7 @@ import org.apache.hadoop.yarn.proto.YarnServiceProtos.AllocateRequestProtoOrBuil
 
 import com.google.protobuf.TextFormat;
 
+// TODO: jth, this is for the request from AM to RM
 @Private
 @Unstable
 public class AllocateRequestPBImpl extends AllocateRequest {
