@@ -106,6 +106,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   
   /**
    * Class compares Resource by memory then cpu in reverse order
+   * TODO: JTH, extend this Comparator for bandwidth
    */
   class ResourceReverseMemoryThenCpuComparator implements Comparator<Resource> {
     @Override
@@ -155,7 +156,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
   protected final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(
       new org.apache.hadoop.yarn.api.records.ResourceRequest.ResourceRequestComparator());
-  protected final Set<ContainerResourceIncreaseRequest> resourceIncreaseAsk = new TreeSet<ContainerResourceIncreaseRequest>();
+  protected final List<ContainerResourceIncreaseRequest> resourceIncreaseAsk = new ArrayList<ContainerResourceIncreaseRequest>();
   protected final Set<ContainerId> release = new TreeSet<ContainerId>();
   // pendingRelease holds history or release requests.request is removed only if
   // RM sends completedContainer.
@@ -232,7 +233,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     LOG.info("JTH: allocateContainerResourceIncrease()");
 
     // TODO: Generate new ResourceRequest
-    ResourceRequest resourceRequest = ResourceRequest.newInstance();
+    //ResourceRequest resourceRequest = ResourceRequest.newInstance();
 /*
     public static AllocateRequest newInstance(int responseID, float appProgress,
     List<ResourceRequest> resourceAsk,
@@ -243,7 +244,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 */
     resourceIncreaseAsk.clear();
 
-    return rmClient.allocate(allocateRequest);
+    return null;
+   // return rmClient.allocate(allocateRequest);
   }
 
   @Override
@@ -260,7 +262,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
     if (resourceIncreaseAsk.isEmpty() == false) {
       LOG.info("JTH: allocate(), resourceIncreaseAsk not empty. Calling allocateContainerResourceIncrease()");
-      return allocateContainerResourceIncrease();
+      //return allocateContainerResourceIncrease();
     } else {
       LOG.info("JTH: allocate(), resourceIncreaseAsk is empty");
     }
@@ -291,7 +293,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
         
         allocateRequest =
             AllocateRequest.newInstance(lastResponseId, progressIndicator,
-              askList, releaseList, blacklistRequest);
+              askList, releaseList, blacklistRequest, resourceIncreaseAsk);
         // clear blacklistAdditions and blacklistRemovals before 
         // unsynchronized part
         blacklistAdditions.clear();

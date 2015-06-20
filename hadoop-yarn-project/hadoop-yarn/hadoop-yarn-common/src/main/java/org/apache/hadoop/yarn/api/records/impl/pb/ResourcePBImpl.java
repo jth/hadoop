@@ -57,12 +57,14 @@ public class ResourcePBImpl extends Resource {
 
   @Override
   public void setBandwidth(int bandwidth) {
-
+    maybeInitBuilder();
+    builder.setBandwidth((bandwidth));
   }
 
   @Override
   public int getBandwidth() {
-    return 0;
+    ResourceProtoOrBuilder p = viaProto ? proto : builder;
+    return (p.getBandwidth());
   }
 
   @Override
