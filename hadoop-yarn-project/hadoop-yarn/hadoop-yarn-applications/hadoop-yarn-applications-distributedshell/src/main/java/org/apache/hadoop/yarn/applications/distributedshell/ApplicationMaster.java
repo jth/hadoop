@@ -18,34 +18,8 @@
 
 package org.apache.hadoop.yarn.applications.distributedshell;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
@@ -66,13 +40,8 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.ApplicationMasterProtocol;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
-import org.apache.hadoop.yarn.api.protocolrecords.AllocateRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
-import org.apache.hadoop.yarn.api.protocolrecords.FinishApplicationMasterRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
-import org.apache.hadoop.yarn.api.protocolrecords.StartContainerRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.*;
 import org.apache.hadoop.yarn.api.records.*;
-import org.apache.hadoop.yarn.api.records.impl.pb.ContainerResourceIncreaseRequestPBImpl;
 import org.apache.hadoop.yarn.api.records.timeline.TimelineEntity;
 import org.apache.hadoop.yarn.api.records.timeline.TimelineEvent;
 import org.apache.hadoop.yarn.api.records.timeline.TimelinePutResponse;
@@ -87,7 +56,16 @@ import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.log4j.LogManager;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.*;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.security.PrivilegedExceptionAction;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An ApplicationMaster for executing shell commands on a set of launched
@@ -864,7 +842,7 @@ public class ApplicationMaster {
                 System.out.println("JTH: Progress at or above threshold " + progressThreshold + ". Requesting new container from RM");
                 System.out.println("JTH: Progress at or above threshold " + progressThreshold + ". Stopping a container");
                 if (runningContainers.isEmpty() == false) {
-                    System.out.println("Releasing running container " + runningContainers.get(0).toString());
+                    //System.out.println("Releasing running container " + runningContainers.get(0).toString());
                     //amRMClient.releaseAssignedContainer(runningContainers.get(0));
                     /*
                     try {
@@ -875,11 +853,32 @@ public class ApplicationMaster {
                         throw new RuntimeException("Couldn't stop container " + runningContainers.get(0).toString() + ". Reason: " + e.getMessage());
                     }
                     */
-                    final Resource res = Resource.newInstance(1024, 1, 2000);
-                    ContainerRequest req = new ContainerRequest(res, null, null, Priority.newInstance(requestPriority));
+                    final Container tmp = containerMap.get(runningContainers.get(0));
+                    //nmClientAsync.getClient().
+                    //final Resource res = Resource.newInstance(1024, 1, 2000);
+                    //ContainerRequest req = new ContainerRequest(res, null, null, Priority.newInstance(requestPriority));
                     //ContainerResourceIncreaseRequest req = ContainerResourceIncreaseRequest.newInstance(runningContainers.get(0), res);
-                    System.out.println("Increasing Container Resource Request for container " + runningContainers.get(0).toString());
-                    amRMClient.increaseContainerResourceRequest(runningContainers.get(0), res);
+                    //System.out.println("Increasing Container Resource Request for container " + runningContainers.get(0).toString());
+                    //amRMClient.increaseContainerResourceRequest(runningContainers.get(0), res);
+
+                    // Ask for container status to trigger method
+
+                    System.out.println("Asking for ContainerStatus");
+                    final Container container = containerMap.get(runningContainers.get(0));
+                    if (container == null) {
+                        System.out.println("JTH: containerMap.get(): Container is null!");
+                    } else {
+                        System.out.println("ContainerID: " + container.getId() + "; NodeID: " + container.getNodeId());
+                        nmClientAsync.getContainerStatusAsync(container.getId(), container.getNodeId());
+//                        try {
+//                            nmClientAsync.getClient().getContainerStatus(container.getId(), container.getNodeId());
+//                        } catch (YarnException | IOException e) {
+//                            throw new RuntimeException("JTH: " + e.toString());
+//                        }
+
+                    }
+                    //nmClientAsync.getContainerStatusAsync();
+                    //nmClientAsync.getClient().get
                     //amRMClient.increaseContainerResourceRequest(req);
                     //final org.apache.hadoop.yarn.api.records.Token containerToken = containerMap.get(runningContainers.get(0)).getContainerToken();
                     //ContainerResourceIncrease incr = ContainerResourceIncrease.newInstance(runningContainers.get(0), res, containerToken);
@@ -944,15 +943,15 @@ public class ApplicationMaster {
                 System.out.println("Succeeded to stop Container " + containerId);
             }
             containers.remove(containerId);
+            applicationMaster.runningContainers.remove(containerId);
+            applicationMaster.containerMap.remove(containerId);
         }
 
         @Override
         public void onContainerStatusReceived(ContainerId containerId,
                                               ContainerStatus containerStatus) {
-            if (LOG.isDebugEnabled()) {
-                System.out.println("Container Status: id=" + containerId + ", status=" +
+                System.out.println("JTH: Container Status: id=" + containerId + ", status=" +
                         containerStatus);
-            }
         }
 
         @Override

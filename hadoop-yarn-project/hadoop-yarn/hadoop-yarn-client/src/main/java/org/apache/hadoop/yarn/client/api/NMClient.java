@@ -19,22 +19,18 @@
 
 package org.apache.hadoop.yarn.client.api;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Map;
-
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.service.AbstractService;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.api.impl.NMClientImpl;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Map;
 
 @InterfaceAudience.Public
 @InterfaceStability.Stable
@@ -86,6 +82,8 @@ public abstract class NMClient extends AbstractService {
       ContainerLaunchContext containerLaunchContext)
           throws YarnException, IOException;
 
+  public abstract void increaseContainerResource(ContainerId containerId, NodeId nodeId, Resource capability) throws IOException, YarnException;
+
   /**
    * <p>Stop an started container.</p>
    *
@@ -95,7 +93,6 @@ public abstract class NMClient extends AbstractService {
    * @throws YarnException
    * @throws IOException
    */
-  // TODO JTH: Inspect this further...
   public abstract void stopContainer(ContainerId containerId, NodeId nodeId)
       throws YarnException, IOException;
 

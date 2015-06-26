@@ -18,6 +18,19 @@
 
 package org.apache.hadoop.yarn.client.api.impl;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.classification.InterfaceAudience.Private;
+import org.apache.hadoop.classification.InterfaceStability.Unstable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.token.SecretManager.InvalidToken;
+import org.apache.hadoop.yarn.api.protocolrecords.*;
+import org.apache.hadoop.yarn.api.records.*;
+import org.apache.hadoop.yarn.client.api.NMClient;
+import org.apache.hadoop.yarn.client.api.impl.ContainerManagementProtocolProxy.ContainerManagementProtocolProxyData;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.ipc.RPCUtil;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -26,31 +39,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.classification.InterfaceAudience.Private;
-import org.apache.hadoop.classification.InterfaceStability.Unstable;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.token.SecretManager.InvalidToken;
-import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusesRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusesResponse;
-import org.apache.hadoop.yarn.api.protocolrecords.StartContainerRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.StartContainersRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.StartContainersResponse;
-import org.apache.hadoop.yarn.api.protocolrecords.StopContainersRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.StopContainersResponse;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
-import org.apache.hadoop.yarn.api.records.ContainerState;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.hadoop.yarn.api.records.Token;
-import org.apache.hadoop.yarn.client.api.NMClient;
-import org.apache.hadoop.yarn.client.api.impl.ContainerManagementProtocolProxy.ContainerManagementProtocolProxyData;
-import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.yarn.ipc.RPCUtil;
 
 /**
  * <p>
@@ -174,6 +162,8 @@ public class NMClientImpl extends NMClient {
         .put(startedContainer.getContainerId(), startedContainer);
   }
 
+  // TODO: JTH, how is this called?
+  // This is AppMaster realm
   @Override
   public Map<String, ByteBuffer> startContainer(
       Container container, ContainerLaunchContext containerLaunchContext)
@@ -198,6 +188,7 @@ public class NMClientImpl extends NMClient {
         list.add(scRequest);
         StartContainersRequest allRequests =
             StartContainersRequest.newInstance(list);
+        LOG.info("JTH: Request to actual NM");
         StartContainersResponse response =
             proxy
                 .getContainerManagementProtocol().startContainers(allRequests);
@@ -232,6 +223,36 @@ public class NMClientImpl extends NMClient {
   }
 
   @Override
+  public void increaseContainerResource(ContainerId containerId, NodeId nodeId, Resource capability) throws IOException, YarnException {
+    LOG.info("JTH: increaseContainerResource()");
+
+    ContainerManagementProtocolProxyData proxy = null;
+    List<ContainerId> containerIds = new ArrayList<ContainerId>();
+    containerIds.add(containerId);
+    try {
+      proxy = cmProxy.getProxy(nodeId.toString(), containerId);
+
+      // TODO: Misuse the status request for resource increase...
+
+      StopContainersResponse response =
+              proxy.getContainerManagementProtocol().stopContainers(
+                      StopContainersRequest.newInstance(containerIds));
+      if (response.getFailedRequests() != null
+              && response.getFailedRequests().containsKey(containerId)) {
+        Throwable t = response.getFailedRequests().get(containerId)
+                .deSerialize();
+        parseAndThrowException(t);
+      }
+    } finally {
+      if (proxy != null) {
+        cmProxy.mayBeCloseProxy(proxy);
+      }
+    }
+
+
+  }
+
+  @Override
   public void stopContainer(ContainerId containerId, NodeId nodeId)
       throws YarnException, IOException {
     StartedContainer startedContainer = getStartedContainer(containerId);
@@ -262,6 +283,7 @@ public class NMClientImpl extends NMClient {
     ContainerManagementProtocolProxyData proxy = null;
     List<ContainerId> containerIds = new ArrayList<ContainerId>();
     containerIds.add(containerId);
+    LOG.info("JTH: getContainerStatus()");
     try {
       proxy = cmProxy.getProxy(nodeId.toString(), containerId);
       GetContainerStatusesResponse response =
