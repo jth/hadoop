@@ -230,10 +230,12 @@ public class NMClientAsyncImpl extends NMClientAsync {
   }
 
   // Wraps the resource stuff into a Container-Status message
-  public void sendResourceIncrease(ContainerId containerId, NodeId nodeId, ContainerResourceIncreaseRequest increaseRequest) {
+  @Override
+  public void increaseContainerRequest(ContainerId containerId, NodeId nodeId, ContainerResourceIncreaseRequest increase) {
+    LOG.info("JTH: increaseContainerRequest()");
     try {
       events.put(new ContainerEvent(containerId, nodeId, null,
-              ContainerEventType.QUERY_CONTAINER));
+              ContainerEventType.QUERY_CONTAINER, increase));
     } catch (InterruptedException e) {
       LOG.warn("Exception when scheduling the event of querying the status" +
               " of Container " + containerId);
@@ -280,6 +282,16 @@ public class NMClientAsyncImpl extends NMClientAsync {
     private ContainerId containerId;
     private NodeId nodeId;
     private Token containerToken;
+    private ContainerResourceIncreaseRequest resourceIncrease;
+
+    public ContainerEvent(ContainerId containerId, NodeId nodeId,
+                          Token containerToken, ContainerEventType type, ContainerResourceIncreaseRequest resourceIncrease) {
+      super(type);
+      this.containerId = containerId;
+      this.nodeId = nodeId;
+      this.containerToken = containerToken;
+      this.resourceIncrease = resourceIncrease;
+    }
 
     public ContainerEvent(ContainerId containerId, NodeId nodeId,
         Token containerToken, ContainerEventType type) {
@@ -299,6 +311,10 @@ public class NMClientAsyncImpl extends NMClientAsync {
 
     public Token getContainerToken() {
       return containerToken;
+    }
+
+    public ContainerResourceIncreaseRequest getResourceIncrease() {
+      return resourceIncrease;
     }
   }
 

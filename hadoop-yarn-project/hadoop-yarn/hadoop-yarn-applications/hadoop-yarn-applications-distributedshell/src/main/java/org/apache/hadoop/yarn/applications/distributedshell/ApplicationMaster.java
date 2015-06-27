@@ -869,7 +869,12 @@ public class ApplicationMaster {
                         System.out.println("JTH: containerMap.get(): Container is null!");
                     } else {
                         System.out.println("ContainerID: " + container.getId() + "; NodeID: " + container.getNodeId());
-                        nmClientAsync.getContainerStatusAsync(container.getId(), container.getNodeId());
+                        try {
+                            Resource res = Resource.newInstance(2, 1024, 1337);
+                            nmClientAsync.getClient().increaseContainerResource(container.getId(), container.getNodeId(), res);
+                        } catch (IOException | YarnException e) {
+                            throw new RuntimeException("JTH: increaseContainerResource failed: " + e.getMessage());
+                        }
 //                        try {
 //                            nmClientAsync.getClient().getContainerStatus(container.getId(), container.getNodeId());
 //                        } catch (YarnException | IOException e) {

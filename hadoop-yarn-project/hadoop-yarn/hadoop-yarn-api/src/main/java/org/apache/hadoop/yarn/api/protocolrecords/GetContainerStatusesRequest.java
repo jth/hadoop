@@ -18,14 +18,15 @@
 
 package org.apache.hadoop.yarn.api.protocolrecords;
 
-import java.util.List;
-
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Stable;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Records;
+
+import java.util.List;
 
 /**
  * The request sent by the <code>ApplicationMaster</code> to the
@@ -37,6 +38,17 @@ import org.apache.hadoop.yarn.util.Records;
 @Public
 @Stable
 public abstract class GetContainerStatusesRequest {
+
+  @Public
+  @Stable
+  public static GetContainerStatusesRequest newInstance(
+          List<ContainerId> containerIds, Resource capability) {
+    GetContainerStatusesRequest request =
+            Records.newRecord(GetContainerStatusesRequest.class);
+    request.setContainerIds(containerIds);
+    request.setCapability(capability);
+    return request;
+  }
 
   @Public
   @Stable
@@ -70,4 +82,12 @@ public abstract class GetContainerStatusesRequest {
   @Public
   @Stable
   public abstract void setContainerIds(List<ContainerId> containerIds);
+
+  @Public
+  @Stable
+  public abstract void setCapability(Resource capabilty);
+
+  @Public
+  @Stable
+  public abstract Resource getCapability();
 }

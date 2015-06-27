@@ -229,26 +229,25 @@ public class NMClientImpl extends NMClient {
     ContainerManagementProtocolProxyData proxy = null;
     List<ContainerId> containerIds = new ArrayList<ContainerId>();
     containerIds.add(containerId);
+    LOG.info("JTH: getContainerStatus()");
     try {
       proxy = cmProxy.getProxy(nodeId.toString(), containerId);
-
-      // TODO: Misuse the status request for resource increase...
-
-      StopContainersResponse response =
-              proxy.getContainerManagementProtocol().stopContainers(
-                      StopContainersRequest.newInstance(containerIds));
+      GetContainerStatusesResponse response =
+              proxy.getContainerManagementProtocol().getContainerStatuses(
+                      GetContainerStatusesRequest.newInstance(containerIds, capability));
       if (response.getFailedRequests() != null
               && response.getFailedRequests().containsKey(containerId)) {
-        Throwable t = response.getFailedRequests().get(containerId)
-                .deSerialize();
+        Throwable t =
+                response.getFailedRequests().get(containerId).deSerialize();
         parseAndThrowException(t);
       }
+      // We don't need that
+      ContainerStatus containerStatus = response.getContainerStatuses().get(0);
     } finally {
       if (proxy != null) {
         cmProxy.mayBeCloseProxy(proxy);
       }
     }
-
 
   }
 

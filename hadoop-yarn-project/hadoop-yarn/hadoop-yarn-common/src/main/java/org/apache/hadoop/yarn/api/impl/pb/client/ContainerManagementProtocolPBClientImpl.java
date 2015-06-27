@@ -111,8 +111,11 @@ public class ContainerManagementProtocolPBClientImpl implements ContainerManagem
   public GetContainerStatusesResponse getContainerStatuses(
       GetContainerStatusesRequest request) throws YarnException, IOException {
     LOG.info("JTH: getContainerStatuses()");
+    LOG.info("JTH: Capabilities: " + request.getCapability());
     GetContainerStatusesRequestProto requestProto =
         ((GetContainerStatusesRequestPBImpl) request).getProto();
+    // Communication to Nodemanager takes place here
+    LOG.info("JTH: requestProto.getCapability() " + requestProto.getCapability());
     try {
       return new GetContainerStatusesResponsePBImpl(proxy.getContainerStatuses(
         null, requestProto));

@@ -684,7 +684,7 @@ public class ContainerManagerImpl extends CompositeService implements
       System.out.println("JTH: Starting containers.");
     UserGroupInformation remoteUgi = getRemoteUgi();
     NMTokenIdentifier nmTokenIdentifier = selectNMTokenIdentifier(remoteUgi);
-    authorizeUser(remoteUgi,nmTokenIdentifier);
+    authorizeUser(remoteUgi, nmTokenIdentifier);
     List<ContainerId> succeededContainers = new ArrayList<ContainerId>();
     Map<ContainerId, SerializedException> failedContainers =
         new HashMap<ContainerId, SerializedException>();
@@ -714,7 +714,7 @@ public class ContainerManagerImpl extends CompositeService implements
     }
 
     return StartContainersResponse.newInstance(getAuxServiceMetaData(),
-      succeededContainers, failedContainers);
+            succeededContainers, failedContainers);
   }
 
   private ContainerManagerApplicationProto buildAppProto(ApplicationId appId,
@@ -972,12 +972,19 @@ public class ContainerManagerImpl extends CompositeService implements
 
   /**
    * Get a list of container statuses running on this NodeManager
+   * This is actually reached
    */
   @Override
   public GetContainerStatusesResponse getContainerStatuses(
       GetContainerStatusesRequest request) throws YarnException, IOException {
 
     LOG.info("JTH: getContainerStatuses()");
+    if (request.getCapability() != null) {
+      LOG.info("JTH: Got ResourceIncrease: " + request.getCapability());
+    } else {
+      LOG.info("JTH: request.getCapability() is null");
+    }
+
     List<ContainerStatus> succeededRequests = new ArrayList<ContainerStatus>();
     Map<ContainerId, SerializedException> failedRequests =
         new HashMap<ContainerId, SerializedException>();

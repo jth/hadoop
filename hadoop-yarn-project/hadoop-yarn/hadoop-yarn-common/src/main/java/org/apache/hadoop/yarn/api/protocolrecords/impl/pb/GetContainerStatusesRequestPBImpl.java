@@ -18,30 +18,38 @@
 
 package org.apache.hadoop.yarn.api.protocolrecords.impl.pb;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.google.protobuf.TextFormat;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusesRequest;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerIdPBImpl;
+import org.apache.hadoop.yarn.api.records.impl.pb.ResourcePBImpl;
 import org.apache.hadoop.yarn.proto.YarnProtos.ContainerIdProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.GetContainerStatusesRequestProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.GetContainerStatusesRequestProtoOrBuilder;
 
-import com.google.protobuf.TextFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.apache.hadoop.yarn.proto.YarnProtos.ResourceProto;
 
 @Private
 @Unstable
 public class GetContainerStatusesRequestPBImpl extends
     GetContainerStatusesRequest {
+  private static final Log LOG = LogFactory.getLog(GetContainerStatusesRequestPBImpl.class);
+
   GetContainerStatusesRequestProto proto = GetContainerStatusesRequestProto
     .getDefaultInstance();
   GetContainerStatusesRequestProto.Builder builder = null;
   boolean viaProto = false;
 
   private List<ContainerId> containerIds = null;
+  private Resource capability = null;
 
   public GetContainerStatusesRequestPBImpl() {
     builder = GetContainerStatusesRequestProto.newBuilder();
@@ -84,6 +92,9 @@ public class GetContainerStatusesRequestPBImpl extends
     if (this.containerIds != null) {
       addLocalContainerIdsToProto();
     }
+    if (this.capability != null) {
+      addLocalCapabilityToProto();
+    }
   }
 
   private void mergeLocalToProto() {
@@ -99,6 +110,15 @@ public class GetContainerStatusesRequestPBImpl extends
       builder = GetContainerStatusesRequestProto.newBuilder(proto);
     }
     viaProto = false;
+  }
+
+  private void addLocalCapabilityToProto() {
+    maybeInitBuilder();
+    builder.clearCapability();
+    if (this.capability == null) {
+      return;
+    }
+    builder.setCapability(convertToProtoFormat(capability));
   }
 
   private void addLocalContainerIdsToProto() {
@@ -132,6 +152,32 @@ public class GetContainerStatusesRequestPBImpl extends
   }
 
   @Override
+  public void setCapability(Resource capability) {
+    maybeInitBuilder();
+    if (capability == null) {
+      builder.clearCapability();
+    }
+    LOG.info("JTH: setCapability with resource: " + capability);
+    this.capability = capability;
+  }
+
+  @Override
+  public Resource getCapability() {
+    maybeInitBuilder();
+    LOG.info("JTH: getCapability()");
+    if (this.capability != null) {
+      return this.capability;
+    }
+
+    GetContainerStatusesRequestProtoOrBuilder p = viaProto ? proto : builder;
+    ContainerId containerId = this.convertFromProtoFormat(p.getContainerId(0));
+    Resource res = this.convertFromProtoFormat(p.getCapability());
+    LOG.info("JTH: ContainerID: " + containerId.toString() + ", Resource: " + res.toString());
+
+    return res;
+  }
+
+  @Override
   public void setContainerIds(List<ContainerId> containerIds) {
     maybeInitBuilder();
     if (containerIds == null)
@@ -139,8 +185,16 @@ public class GetContainerStatusesRequestPBImpl extends
     this.containerIds = containerIds;
   }
 
+  private ResourcePBImpl convertFromProtoFormat(ResourceProto p) {
+    return new ResourcePBImpl(p);
+  }
+
   private ContainerIdPBImpl convertFromProtoFormat(ContainerIdProto p) {
     return new ContainerIdPBImpl(p);
+  }
+
+  private ResourceProto convertToProtoFormat(Resource r) {
+    return ((ResourcePBImpl) r).getProto();
   }
 
   private ContainerIdProto convertToProtoFormat(ContainerId t) {

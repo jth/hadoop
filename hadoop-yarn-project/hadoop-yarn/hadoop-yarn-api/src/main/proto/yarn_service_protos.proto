@@ -239,6 +239,7 @@ message StopContainerResponseProto {
 
 message GetContainerStatusRequestProto {
   optional ContainerIdProto container_id = 1;
+  optional ResourceProto capability = 2;
 }
 
 message GetContainerStatusResponseProto {
@@ -272,6 +273,7 @@ message StopContainersResponseProto {
 
 message GetContainerStatusesRequestProto {
   repeated ContainerIdProto container_id = 1;
+  optional ResourceProto capability  = 2;
 }
 
 message GetContainerStatusesResponseProto {
