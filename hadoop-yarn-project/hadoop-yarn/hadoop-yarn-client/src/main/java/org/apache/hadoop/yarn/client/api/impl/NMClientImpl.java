@@ -232,6 +232,7 @@ public class NMClientImpl extends NMClient {
     LOG.info("JTH: getContainerStatus()");
     try {
       proxy = cmProxy.getProxy(nodeId.toString(), containerId);
+      LOG.info("We are on node: " + nodeId.toString() + ", asking for container " + containerId.toString());
       GetContainerStatusesResponse response =
               proxy.getContainerManagementProtocol().getContainerStatuses(
                       GetContainerStatusesRequest.newInstance(containerIds, capability));

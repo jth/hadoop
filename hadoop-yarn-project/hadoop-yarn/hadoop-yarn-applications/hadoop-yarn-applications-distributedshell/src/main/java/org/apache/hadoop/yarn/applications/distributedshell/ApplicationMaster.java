@@ -245,7 +245,7 @@ public class ApplicationMaster {
 
     // JTH
     private final List<ContainerId> runningContainers = new ArrayList<>();
-    private final static double progressThreshold = 0.4;
+    private final static double progressThreshold = 0.1;
     private boolean progressAboveThreshhold = false;
     private NodeId nodeId; // This most likely won't work on a cluster, but for single node operation this is fine.
     private final Map<ContainerId, Container> containerMap = new HashMap<>(); // Don't know how to get a handle on container tokens otherweise

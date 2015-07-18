@@ -273,7 +273,7 @@ public class ContainerManagerImpl extends CompositeService implements
         containerId.getApplicationAttemptId().getApplicationId();
 
     LOG.info("Recovering " + containerId + " in state " + rcs.getStatus()
-        + " with exit code " + rcs.getExitCode());
+            + " with exit code " + rcs.getExitCode());
 
     if (context.getApplications().containsKey(appId)) {
       Credentials credentials = parseCredentials(launchContext);
@@ -519,7 +519,7 @@ public class ContainerManagerImpl extends CompositeService implements
       LOG.info("All applications in FINISHED state");
     } else {
       LOG.info("Done waiting for Applications to be Finished. Still alive: " +
-          applications.keySet());
+              applications.keySet());
     }
   }
 
@@ -538,7 +538,7 @@ public class ContainerManagerImpl extends CompositeService implements
     LOG.info("Waiting for containers to be killed");
 
     this.handle(new CMgrCompletedContainersEvent(containerIds,
-      CMgrCompletedContainersEvent.Reason.ON_NODEMANAGER_RESYNC));
+            CMgrCompletedContainersEvent.Reason.ON_NODEMANAGER_RESYNC));
 
     /*
      * We will wait till all the containers change their state to COMPLETE. We
@@ -681,7 +681,7 @@ public class ContainerManagerImpl extends CompositeService implements
                 "Rejecting new containers as NodeManager has not"
                         + " yet connected with ResourceManager");
     }
-      System.out.println("JTH: Starting containers.");
+    System.out.println("JTH: Starting containers.");
     UserGroupInformation remoteUgi = getRemoteUgi();
     NMTokenIdentifier nmTokenIdentifier = selectNMTokenIdentifier(remoteUgi);
     authorizeUser(remoteUgi, nmTokenIdentifier);
@@ -970,6 +970,37 @@ public class ContainerManagerImpl extends CompositeService implements
     }
   }
 
+  private boolean isResourceIncreaseRequest(Resource capabilty) {
+    // Assume that a valid resource increase request doesn't have a resource set to 0
+    if (capabilty.getBandwidth() != 0 && capabilty.getMemory() != 0 && capabilty.getVirtualCores() != 0) {
+      return true;
+    }
+    return false;
+  }
+
+  // TODO: Extend container monitor for bandwidth
+  private void handle_resource_increase(ContainerId id) {
+    LOG.info("JTH: handle_resource_increase() for containerID " + id);
+
+    if (getContext().getContainers().isEmpty() == true) {
+      LOG.info("JTH: getContext().getContainers() is empty, returning.");
+      return;
+    }
+
+    Container bar = this.getContext().getContainers().get(id);
+    LOG.info("JTH: got running container with id: " + bar.getContainerId());
+    LOG.info("JTH: PID for container: " + bar.getPid());
+    for (Container foo : context.getContainers().values()) {
+      LOG.info("JTH: Environment for container " + foo.getContainerId());
+      Iterator it = foo.getLaunchContext().getEnvironment().entrySet().iterator();
+      while (it.hasNext()) {
+        Map.Entry pair = (Map.Entry)it.next();
+        LOG.info("JTH: " + pair.getKey() + " = " + pair.getValue());
+        it.remove(); // avoids a ConcurrentModificationException
+      }
+    }
+  }
+
   /**
    * Get a list of container statuses running on this NodeManager
    * This is actually reached
@@ -979,10 +1010,14 @@ public class ContainerManagerImpl extends CompositeService implements
       GetContainerStatusesRequest request) throws YarnException, IOException {
 
     LOG.info("JTH: getContainerStatuses()");
-    if (request.getCapability() != null) {
-      LOG.info("JTH: Got ResourceIncrease: " + request.getCapability());
-    } else {
-      LOG.info("JTH: request.getCapability() is null");
+    // this isn't good, just one resource for multiple containers.... mhm
+    for (ContainerId id : request.getContainerIds()) {
+      if (isResourceIncreaseRequest(request.getCapability())) {
+        LOG.info("JTH: Got ResourceIncrease " + request.getCapability() + " from container " + id.toString());
+        handle_resource_increase(id);
+      } else {
+        LOG.info("JTH: No resource increase request, doing normal  status response");
+      }
     }
 
     List<ContainerStatus> succeededRequests = new ArrayList<ContainerStatus>();
