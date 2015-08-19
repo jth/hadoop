@@ -431,7 +431,7 @@ public class YARNRunner implements ClientProtocol {
     }
     vargsFinal.add(mergedCommand.toString());
 
-    LOG.debug("Command to launch container for ApplicationMaster is : "
+    LOG.debug("JTH: Command to launch container for ApplicationMaster is : "
         + mergedCommand);
 
     // Setup the CLASSPATH in environment

@@ -758,6 +758,7 @@ public class ContainerManagerImpl extends CompositeService implements
     return builder.build();
   }
 
+  // Place where containers are started
   @SuppressWarnings("unchecked")
   private void startContainerInternal(NMTokenIdentifier nmTokenIdentifier,
       ContainerTokenIdentifier containerTokenIdentifier,
@@ -794,6 +795,10 @@ public class ContainerManagerImpl extends CompositeService implements
     LOG.info("Start request for " + containerIdStr + " by user " + user);
 
     ContainerLaunchContext launchContext = request.getContainerLaunchContext();
+
+    for (String cmd : launchContext.getCommands()) {
+      LOG.info("JTH: launch context cmd: " + cmd);
+    }
 
     Map<String, ByteBuffer> serviceData = getAuxServiceMetaData();
     if (launchContext.getServiceData()!=null && 
@@ -845,6 +850,7 @@ public class ContainerManagerImpl extends CompositeService implements
         }
 
         this.context.getNMStateStore().storeContainer(containerId, request);
+        LOG.info("JTH: Class of handle(): " + dispatcher.getEventHandler().getClass().toString());
         dispatcher.getEventHandler().handle(
           new ApplicationContainerInitEvent(container));
 

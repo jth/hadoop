@@ -1120,6 +1120,7 @@ public class ContainerImpl implements Container {
     }
   }
 
+  // JTH: This gets the pid from the node manager itself...
   public int getPid() {
     return Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
   }
