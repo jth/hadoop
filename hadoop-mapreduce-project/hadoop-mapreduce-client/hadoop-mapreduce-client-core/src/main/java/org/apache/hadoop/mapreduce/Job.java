@@ -18,15 +18,11 @@
 
 package org.apache.hadoop.mapreduce;
 
-import java.io.IOException;
-import java.net.URI;
-import java.security.PrivilegedExceptionAction;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configuration.IntegerRanges;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,6 +35,10 @@ import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.mapreduce.util.ConfigUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.records.ReservationId;
+
+import java.io.IOException;
+import java.net.URI;
+import java.security.PrivilegedExceptionAction;
 
 /**
  * The job submitter's view of the Job.
@@ -99,6 +99,12 @@ public class Job extends JobContextImpl implements JobContext {
   public static final String SUBMIT_REPLICATION = 
     "mapreduce.client.submit.file.replication";
   public static final int DEFAULT_SUBMIT_REPLICATION = 10;
+
+  // JTH: Added timers to measure map and reduce phase
+  private long jthReduceStart;
+  private long jthReduceFinish;
+  private long jthMapStart;
+  private long jthMapFinish;
 
   @InterfaceStability.Evolving
   public static enum TaskStatusFilter { NONE, KILLED, FAILED, SUCCEEDED, ALL }
@@ -813,7 +819,7 @@ public class Job extends JobContextImpl implements JobContext {
   public void setInputFormatClass(Class<? extends InputFormat> cls
                                   ) throws IllegalStateException {
     ensureState(JobState.DEFINE);
-    conf.setClass(INPUT_FORMAT_CLASS_ATTR, cls, 
+    conf.setClass(INPUT_FORMAT_CLASS_ATTR, cls,
                   InputFormat.class);
   }
 
@@ -825,7 +831,7 @@ public class Job extends JobContextImpl implements JobContext {
   public void setOutputFormatClass(Class<? extends OutputFormat> cls
                                    ) throws IllegalStateException {
     ensureState(JobState.DEFINE);
-    conf.setClass(OUTPUT_FORMAT_CLASS_ATTR, cls, 
+    conf.setClass(OUTPUT_FORMAT_CLASS_ATTR, cls,
                   OutputFormat.class);
   }
 
@@ -897,8 +903,8 @@ public class Job extends JobContextImpl implements JobContext {
   public void setPartitionerClass(Class<? extends Partitioner> cls
                                   ) throws IllegalStateException {
     ensureState(JobState.DEFINE);
-    conf.setClass(PARTITIONER_CLASS_ATTR, cls, 
-                  Partitioner.class);
+    conf.setClass(PARTITIONER_CLASS_ATTR, cls,
+            Partitioner.class);
   }
 
   /**
@@ -1307,6 +1313,7 @@ public class Job extends JobContextImpl implements JobContext {
     if (state == JobState.DEFINE) {
       submit();
     }
+
     if (verbose) {
       monitorAndPrintJob();
     } else {
@@ -1322,7 +1329,27 @@ public class Job extends JobContextImpl implements JobContext {
     }
     return isSuccessful();
   }
-  
+
+  private void jthUpdateTimers() throws IOException {
+    if (mapProgress() > 0.0f && jthMapStart == 0) {
+      jthMapStart = System.currentTimeMillis();
+    }
+    if (reduceProgress() > 0.0f && jthReduceStart == 0) {
+      jthReduceStart = System.currentTimeMillis();
+    }
+    if (mapProgress() >= 1.0f && jthMapFinish == 0) {
+      jthMapFinish = System.currentTimeMillis();
+    }
+    if (reduceProgress() >= 1.0f && jthReduceFinish == 0) {
+      jthReduceFinish = System.currentTimeMillis();
+    }
+  }
+
+  private void jthLogTimers() {
+    LOG.info("JTH: reduce time taken: " + (jthReduceFinish - jthReduceStart));
+    LOG.info("JTH: map time taken: " + (jthMapFinish - jthMapStart));
+  }
+
   /**
    * Monitor a job and print status in real-time as progress is made and tasks 
    * fail.
@@ -1331,6 +1358,7 @@ public class Job extends JobContextImpl implements JobContext {
    */
   public boolean monitorAndPrintJob() 
       throws IOException, InterruptedException {
+    boolean jthTaskIncrease = false;
     String lastReport = null;
     Job.TaskStatusFilter filter;
     Configuration clientConf = getConfiguration();
@@ -1346,7 +1374,10 @@ public class Job extends JobContextImpl implements JobContext {
     /* make sure to report full progress after the job is done */
     boolean reportedAfterCompletion = false;
     boolean reportedUberMode = false;
+
+
     while (!isComplete() || !reportedAfterCompletion) {
+      jthUpdateTimers();
       if (isComplete()) {
         reportedAfterCompletion = true;
       } else {
@@ -1358,7 +1389,8 @@ public class Job extends JobContextImpl implements JobContext {
       if (!reportedUberMode) {
         reportedUberMode = true;
         LOG.info("Job " + jobId + " running in uber mode : " + isUber());
-      }      
+      }
+      //LOG.info("JTH job progress meter");
       String report = 
         (" map " + StringUtils.formatPercent(mapProgress(), 0)+
             " reduce " + 
@@ -1368,7 +1400,18 @@ public class Job extends JobContextImpl implements JobContext {
         lastReport = report;
       }
 
-      TaskCompletionEvent[] events = 
+      if (reduceProgress() > 0.5f) {
+        // This doesn't work :(
+        // java.lang.IllegalStateException: Job in state RUNNING instead of DEFINE
+        //LOG.info("JTH: ReduceProgress is over 50%, adding a new Reduce Task, was "
+        //        + getNumReduceTasks() + ", setting to " + (getNumReduceTasks() + 1));
+        // Can this be changed at runtime?
+        //this.conf.setMemoryForMapTask();
+        // Problem: Number of reducers is dependant upon splitting of input data. More container for a specific map task?
+        //this.setNumReduceTasks(getNumReduceTasks()+1);
+      }
+
+      TaskCompletionEvent[] events =
         getTaskCompletionEvents(eventCounter, 10); 
       eventCounter += events.length;
       printTaskEvents(events, filter, profiling, mapRanges, reduceRanges);
@@ -1376,6 +1419,7 @@ public class Job extends JobContextImpl implements JobContext {
     boolean success = isSuccessful();
     if (success) {
       LOG.info("Job " + jobId + " completed successfully");
+      jthLogTimers();
     } else {
       LOG.info("Job " + jobId + " failed with state " + status.getState() + 
           " due to: " + status.getFailureInfo());
@@ -1384,6 +1428,7 @@ public class Job extends JobContextImpl implements JobContext {
     if (counters != null) {
       LOG.info(counters.toString());
     }
+    LOG.info("JTH: Job Time: " + (getFinishTime() - getStartTime()));
     return success;
   }
 

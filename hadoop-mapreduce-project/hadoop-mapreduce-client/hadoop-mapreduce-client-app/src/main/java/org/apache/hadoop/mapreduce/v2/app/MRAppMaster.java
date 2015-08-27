@@ -85,9 +85,7 @@ import org.apache.hadoop.util.StringInterner;
 import org.apache.hadoop.yarn.YarnUncaughtExceptionHandler;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.event.AsyncDispatcher;
 import org.apache.hadoop.yarn.event.Dispatcher;
@@ -169,11 +167,15 @@ public class MRAppMaster extends CompositeService {
   private ClassLoader jobClassLoader;
   private OutputCommitter committer;
   private JobEventDispatcher jobEventDispatcher;
+  //private TaskAttemptKillEventDispatcher taskAttemptKillEventDispatcher;
   private JobHistoryEventHandler jobHistoryEventHandler;
   private SpeculatorEventDispatcher speculatorEventDispatcher;
   private AMPreemptionPolicy preemptionPolicy;
   private byte[] encryptedSpillKey;
   private long endTime; // end time of job, unix time
+  private long jthExpectedDeadline;
+  private static boolean jthRequested = false;
+  private final List<TaskId> jthIncreaseList = new ArrayList<>();
 
   // After a task attempt completes from TaskUmbilicalProtocol's point of view,
   // it will be transitioned to finishing state.
@@ -394,6 +396,7 @@ public class MRAppMaster extends CompositeService {
           historyService);
 
       this.jobEventDispatcher = new JobEventDispatcher();
+  //    this.taskAttemptKillEventDispatcher = new TaskAttemptKillEventDispatcher();
 
       //register the event dispatchers
       dispatcher.register(JobEventType.class, jobEventDispatcher);
@@ -401,6 +404,7 @@ public class MRAppMaster extends CompositeService {
       dispatcher.register(TaskAttemptEventType.class, 
           new TaskAttemptEventDispatcher());
       dispatcher.register(CommitterEventType.class, committerEventHandler);
+//      dispatcher.register(TaskAttemptEventType.class, taskAttemptKillEventDispatcher);
 
       if (conf.getBoolean(MRJobConfig.MAP_SPECULATIVE, false)
           || conf.getBoolean(MRJobConfig.REDUCE_SPECULATIVE, false)) {
@@ -929,7 +933,11 @@ public class MRAppMaster extends CompositeService {
 
     @Override
     public void handle(ContainerLauncherEvent event) {
-        this.containerLauncher.handle(event);
+      System.out.println("JTH: ContainerLauncherEvent");
+      if (jthIncreaseList.contains(event.getTaskAttemptID().getTaskId())) {
+        System.out.println("JTH: Attempting to restart Task in new container " + event.getTaskAttemptID().toString());
+      }
+      this.containerLauncher.handle(event);
     }
 
     @Override
@@ -1354,25 +1362,81 @@ public class MRAppMaster extends CompositeService {
     }
   }
 
+
   private class TaskEventDispatcher implements EventHandler<TaskEvent> {
     @SuppressWarnings("unchecked")
     @Override
     public void handle(TaskEvent event) {
       System.out.println("JTH: TaskEventDispatcher");
-      Task task = context.getJob(event.getTaskID().getJobId()).getTask(
-          event.getTaskID());
-      ((EventHandler<TaskEvent>)task).handle(event);
+      Task task = context.getJob(event.getTaskID().getJobId()).getTask(event.getTaskID());
+      System.out.println("JTH: TaskEventDispatcher: ID " + task.getID().toString() + ", Type: " + task.getType() + ", Progress: " + task.getProgress());
+      if (task.isFinished()) {
+        System.out.println("JTH: Task " + task.getID().toString() + " took "
+                + (task.getReport().getFinishTime() - task.getReport().getStartTime()) + " ms to complete");
+      }
+      //ContainerRequestEvent containerRequest = new ContainerRequestEvent();
+      //ContainerLauncherEvent foo = new ContainerLauncherEvent();
+
+      //job.getTotalMaps()
+      //System.out.println("JTH: " + task.getReport().toString());
+              ((EventHandler<TaskEvent>) task).handle(event);
     }
   }
 
+  // Don't use node id for now.
+  private void jthRequestNewContainer(TaskAttemptEvent event, Task task, NodeId nodeId) {
+    System.out.println("JTH: jthRequestNewContainer()");
+   // final Resource resource = Resource.newInstance(128, 2, 1024);
+
+    final TaskAttemptKillEvent killEvent = new TaskAttemptKillEvent(event.getTaskAttemptID(), "JTH: Killed task to reschedule with increased resources");
+
+    //final ContainerRequestEvent requestEvent = new ContainerRequestEvent(event.getTaskAttemptID(), resource, new String[0], new String[0]);
+    //System.out.println("JTH: Request new container for task " + event.getTaskAttemptID().toString());
+    //containerAllocator.handle(requestEvent);
+    // TEST
+    // task.getAttempt().getAssignedContainerID()
+    jthIncreaseList.add(task.getID());
+    TaskAttempt attempt = task.getAttempt(event.getTaskAttemptID());
+    ((EventHandler<TaskAttemptEvent>) attempt).handle(killEvent);
+  }
+
+
+//  private class TaskAttemptKillEventDispatcher
+//          implements EventHandler<TaskAttemptKillEvent> {
+//
+//    @SuppressWarnings("unchecked")
+//    @Override
+//    public void handle(TaskAttemptKillEvent event) {
+//      System.out.println("JTH: Received task kill attempt: " + event.getTaskAttemptID().toString());
+//      //Task task = job.getTask(event.getTaskAttemptID().getTaskId());
+//
+//      //TaskAttempt attempt = task.getAttempt(event.getTaskAttemptID());
+//      //((EventHandler<TaskAttemptKillEvent>) attempt).handle(event);
+//    }
+//  }
+
   private class TaskAttemptEventDispatcher 
           implements EventHandler<TaskAttemptEvent> {
+
     @SuppressWarnings("unchecked")
     @Override
     public void handle(TaskAttemptEvent event) {
+      if (event instanceof TaskAttemptKillEvent) {
+        System.out.println("JTH: Received TaskAttemptKillEvent");
+        return;
+      }
+
       System.out.println("JTH: TaskAttemptEventDispatcher");
       Job job = context.getJob(event.getTaskAttemptID().getTaskId().getJobId());
       Task task = job.getTask(event.getTaskAttemptID().getTaskId());
+      System.out.println("JTH: TaskAttempt: ID: " + task.getID().toString() + ", attemptID: " + event.getTaskAttemptID().toString() + ", progress: " + task.getProgress());
+
+      if (!jthRequested && task.getProgress() >= 0.5f) {
+        System.out.println("JTH: Task " + task.getID().toString() + " is over 50% in progress, requesting a new container for it");
+        jthRequestNewContainer(event, task, null);
+        jthRequested = true;
+      }
+
       TaskAttempt attempt = task.getAttempt(event.getTaskAttemptID());
       ((EventHandler<TaskAttemptEvent>) attempt).handle(event);
 
