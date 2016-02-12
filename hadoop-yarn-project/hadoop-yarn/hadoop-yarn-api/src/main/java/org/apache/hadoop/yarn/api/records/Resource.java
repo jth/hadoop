@@ -61,6 +61,17 @@ public abstract class Resource implements Comparable<Resource> {
     return resource;
   }
 
+  // TODO: JTH, fix that with reasonable defaults
+  @Public
+  @Stable
+  public static Resource newInstance(int memory, int vCores) {
+    Resource resource = Records.newRecord(Resource.class);
+    resource.setMemory(memory);
+    resource.setVirtualCores(vCores);
+    resource.setBandwidth(1024);
+    return resource;
+  }
+
   public abstract void setBandwidth(int bandwidth);
 
   public abstract int getBandwidth();

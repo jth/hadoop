@@ -170,9 +170,8 @@ public class GetContainerStatusesRequestPBImpl extends
     }
 
     GetContainerStatusesRequestProtoOrBuilder p = viaProto ? proto : builder;
-    ContainerId containerId = this.convertFromProtoFormat(p.getContainerId(0));
     Resource res = this.convertFromProtoFormat(p.getCapability());
-    LOG.info("JTH: ContainerID: " + containerId.toString() + ", Resource: " + res.toString());
+    //LOG.info("JTH: ContainerID: " + containerId.toString() + ", Resource: " + res.toString());
 
     return res;
   }

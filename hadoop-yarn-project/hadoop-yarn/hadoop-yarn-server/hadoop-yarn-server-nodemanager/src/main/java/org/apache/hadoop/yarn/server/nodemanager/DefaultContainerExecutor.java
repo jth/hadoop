@@ -18,22 +18,8 @@
 
 package org.apache.hadoop.yarn.server.nodemanager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-
-import static org.apache.hadoop.fs.CreateFlag.CREATE;
-import static org.apache.hadoop.fs.CreateFlag.OVERWRITE;
-
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang.math.RandomUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,8 +29,8 @@ import org.apache.hadoop.fs.UnsupportedFileSystemException;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.util.Shell;
-import org.apache.hadoop.util.Shell.ExitCodeException;
 import org.apache.hadoop.util.Shell.CommandExecutor;
+import org.apache.hadoop.util.Shell.ExitCodeException;
 import org.apache.hadoop.util.Shell.ShellCommandExecutor;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -55,14 +41,18 @@ import org.apache.hadoop.yarn.server.nodemanager.containermanager.container.Cont
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerDiagnosticsUpdateEvent;
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.launcher.ContainerLaunch;
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.ContainerLocalizer;
-import org.apache.hadoop.yarn.server.nodemanager.executor.ContainerLivenessContext;
-import org.apache.hadoop.yarn.server.nodemanager.executor.ContainerSignalContext;
-import org.apache.hadoop.yarn.server.nodemanager.executor.ContainerStartContext;
-import org.apache.hadoop.yarn.server.nodemanager.executor.DeletionAsUserContext;
-import org.apache.hadoop.yarn.server.nodemanager.executor.LocalizerStartContext;
+import org.apache.hadoop.yarn.server.nodemanager.executor.*;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.util.*;
+
+import static org.apache.hadoop.fs.CreateFlag.CREATE;
+import static org.apache.hadoop.fs.CreateFlag.OVERWRITE;
 
 public class DefaultContainerExecutor extends ContainerExecutor {
 
@@ -182,6 +172,7 @@ public class DefaultContainerExecutor extends ContainerExecutor {
     // copy launch script to work dir
     Path launchDst =
         new Path(containerWorkDir, ContainerLaunch.CONTAINER_SCRIPT);
+    LOG.info("JTH: Container Launch Script: " + nmPrivateContainerScriptPath.toString());
     copyFile(nmPrivateContainerScriptPath, launchDst, user);
 
     // Create new local launch wrapper script
@@ -200,6 +191,7 @@ public class DefaultContainerExecutor extends ContainerExecutor {
     }
 
     Path pidFile = getPidFilePath(containerId);
+    System.out.println("JTH: Container PID-File: " + pidFile.toString());
     if (pidFile != null) {
       sb.writeLocalWrapperScript(launchDst, pidFile);
     } else {
@@ -219,9 +211,26 @@ public class DefaultContainerExecutor extends ContainerExecutor {
           containerIdStr, user, pidFile, container.getResource(),
           new File(containerWorkDir.toUri().getPath()),
           container.getLaunchContext().getEnvironment());
-      
+
       if (isContainerActive(containerId)) {
         shExec.execute();
+        LOG.info("Limit resources here based upon PID");
+        try {
+          Thread.sleep(500); // sleep 500ms to wait for thread to be started
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        LOG.info("JTH: PID for container " + container.getContainerId().toString() + ": " + getProcessId(containerId));
+        if (container.getLaunchContext().getEnvironment() == null) {
+          LOG.info("JTH: container environment for " + container.getContainerId().toString() + " is Null, skipping");
+        } else {
+          Iterator it = container.getLaunchContext().getEnvironment().entrySet().iterator();
+          while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            System.out.println("JTH: ENV: " + pair.getKey() + " = " + pair.getValue());
+            it.remove(); // avoids a ConcurrentModificationException
+          }
+        }
       }
       else {
         LOG.info("Container " + containerIdStr +

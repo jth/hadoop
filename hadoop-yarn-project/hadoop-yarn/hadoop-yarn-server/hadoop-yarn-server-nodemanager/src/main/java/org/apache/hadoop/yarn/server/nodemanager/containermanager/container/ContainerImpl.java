@@ -129,6 +129,14 @@ public class ContainerImpl implements Container {
     this.readLock = readWriteLock.readLock();
     this.writeLock = readWriteLock.writeLock();
 
+    /*
+    Iterator it = launchContext.getEnvironment().entrySet().iterator();
+    while (it.hasNext()) {
+      Map.Entry pair = (Map.Entry)it.next();
+      LOG.info("JTH: ContainerImpl" + pair.getKey() + " = " + pair.getValue());
+      it.remove(); // avoids a ConcurrentModificationException
+    } */
+    LOG.info("JTH: ContainerImpl PID: " + ManagementFactory.getRuntimeMXBean().getName() + ", ContainerID: " + this.getContainerId().toString());
     stateMachine = stateMachineFactory.make(this);
   }
 

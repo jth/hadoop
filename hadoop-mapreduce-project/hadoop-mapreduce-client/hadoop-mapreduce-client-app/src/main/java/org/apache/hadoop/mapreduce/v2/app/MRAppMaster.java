@@ -880,6 +880,19 @@ public class MRAppMaster extends CompositeService {
 
     @Override
     public void handle(ContainerAllocatorEvent event) {
+      // JTH: ContainerAllocatorEventType: class org.apache.hadoop.mapreduce.v2.app.rm.ContainerRequestEvent
+      if (event instanceof ContainerRequestEvent) {
+        // Intercept request and allocate bigger container here
+        ContainerRequestEvent e = (ContainerRequestEvent)event;
+        Task t = job.getTask(e.getAttemptID().getTaskId()); System.out.println("JTH: Container is requested for task " + t.toString());
+        for (String rack : e.getRacks()) {
+          System.out.println("JTH: Rack: " + rack);
+        }
+        for (String host : e.getHosts()) {
+          System.out.println("JTH: Host: " + host);
+        }
+      }
+      System.out.println("JTH: ContainerAllocatorEventType: " + event.getClass().toString());
       this.containerAllocator.handle(event);
     }
 
@@ -1357,7 +1370,15 @@ public class MRAppMaster extends CompositeService {
     @SuppressWarnings("unchecked")
     @Override
     public void handle(JobEvent event) {
-      System.out.println("JTH: JobEventDispatcher");
+      System.out.println("JTH: JobEventDispatcherType: " + event.getClass().toString());
+      if (event instanceof JobTaskEvent) {
+        JobTaskEvent e = (JobTaskEvent)event;
+        System.out.println("JTH: JobTaskEvent: " + e.getTaskID().toString() + " state: " + e.getState().toString());
+      }
+      if (event instanceof JobTaskAttemptCompletedEvent) {
+        JobTaskAttemptCompletedEvent e = (JobTaskAttemptCompletedEvent)event;
+        System.out.println("JTH: JobTaskAttemptCompletedEvent: " + e.getCompletionEvent().toString());
+      }
       ((EventHandler<JobEvent>)context.getJob(event.getJobId())).handle(event);
     }
   }
@@ -1367,9 +1388,8 @@ public class MRAppMaster extends CompositeService {
     @SuppressWarnings("unchecked")
     @Override
     public void handle(TaskEvent event) {
-      System.out.println("JTH: TaskEventDispatcher");
+      System.out.println("JTH: TaskEventDispatcherType: " + event.getClass().toString());
       Task task = context.getJob(event.getTaskID().getJobId()).getTask(event.getTaskID());
-      System.out.println("JTH: TaskEventDispatcher: ID " + task.getID().toString() + ", Type: " + task.getType() + ", Progress: " + task.getProgress());
       if (task.isFinished()) {
         System.out.println("JTH: Task " + task.getID().toString() + " took "
                 + (task.getReport().getFinishTime() - task.getReport().getStartTime()) + " ms to complete");
@@ -1384,20 +1404,25 @@ public class MRAppMaster extends CompositeService {
   }
 
   // Don't use node id for now.
+  // TaskAttemptID: TaskAttemptID for sub map/reduce task
   private void jthRequestNewContainer(TaskAttemptEvent event, Task task, NodeId nodeId) {
+    //final ContainerAllocatorEvent cae = new ContainerAllocatorEvent(task.getID()., ContainerAllocator.EventType.CONTAINER_REQ);
     System.out.println("JTH: jthRequestNewContainer()");
    // final Resource resource = Resource.newInstance(128, 2, 1024);
 
-    final TaskAttemptKillEvent killEvent = new TaskAttemptKillEvent(event.getTaskAttemptID(), "JTH: Killed task to reschedule with increased resources");
+    //final TaskAttemptKillEvent killEvent = new TaskAttemptKillEvent(event.getTaskAttemptID(), "JTH: Killed task to reschedule with increased resources");
+
+    //this.containerAllocator.handle();
+    //this.containerAllocator.handle();
 
     //final ContainerRequestEvent requestEvent = new ContainerRequestEvent(event.getTaskAttemptID(), resource, new String[0], new String[0]);
     //System.out.println("JTH: Request new container for task " + event.getTaskAttemptID().toString());
     //containerAllocator.handle(requestEvent);
     // TEST
     // task.getAttempt().getAssignedContainerID()
-    jthIncreaseList.add(task.getID());
-    TaskAttempt attempt = task.getAttempt(event.getTaskAttemptID());
-    ((EventHandler<TaskAttemptEvent>) attempt).handle(killEvent);
+    //jthIncreaseList.add(task.getID());
+    //TaskAttempt attempt = task.getAttempt(event.getTaskAttemptID());
+    //((EventHandler<TaskAttemptEvent>) attempt).handle(killEvent);
   }
 
 
@@ -1421,6 +1446,7 @@ public class MRAppMaster extends CompositeService {
     @SuppressWarnings("unchecked")
     @Override
     public void handle(TaskAttemptEvent event) {
+      System.out.println("TaskAttemptEventDispatcherType: " + event.getClass().toString());
       if (event instanceof TaskAttemptKillEvent) {
         System.out.println("JTH: Received TaskAttemptKillEvent");
         return;
@@ -1431,6 +1457,7 @@ public class MRAppMaster extends CompositeService {
       Task task = job.getTask(event.getTaskAttemptID().getTaskId());
       System.out.println("JTH: TaskAttempt: ID: " + task.getID().toString() + ", attemptID: " + event.getTaskAttemptID().toString() + ", progress: " + task.getProgress());
 
+      // Doesn't work atm
       if (!jthRequested && task.getProgress() >= 0.5f) {
         System.out.println("JTH: Task " + task.getID().toString() + " is over 50% in progress, requesting a new container for it");
         jthRequestNewContainer(event, task, null);
